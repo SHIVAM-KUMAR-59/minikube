@@ -7,7 +7,7 @@
 
 ---
 
-## Key Concepts
+### Key Concepts
 - **Commands** represent actions, **Args** are things and **Flags** are modifiers for those actions.
 - The best applications read like sentences when used, and as a result, users intuitively know how to interact with them.
 - The pattern to follow is `APPNAME VERB NOUN --ADJECTIVE` or `APPNAME COMMAND ARG --FLAG`
@@ -29,3 +29,13 @@
 - A flag is a way to modify the behavior of a command.
 - A Cobra command can define flags that persist through to children commands and flags that are only available to that command.
 - In the example above, `port` is the flag.
+
+---
+
+### Important points
+- Each command file doesn't have its own Execute() method. There is one Execute() call — in main.go — and it's called on the root command only. What each command file has is a cobra.Command struct with its own Run function.
+So the flow is:
+
+- `main.go` — calls root.Execute(), nothing else
+- `root.go` — defines the root minik command
+- `ping.go` — defines the ping subcommand and adds itself to root
