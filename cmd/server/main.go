@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -11,11 +11,12 @@ func main() {
 
 	mux.HandleFunc("/ping", func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("content-type", "application/json")
-		fmt.Fprintln(res, `{"status": "ok", "message": "minikube server is running"}`)
+		fmt.Fprintln(res, `{"status": "ok", "message": "Minikube is running"}`)
+		slog.Info("Ping request received")
 	})
 
-	log.Println("Server running on port :8000")
+	slog.Info("Server running on port :8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to start server", "error", err)
 	}
 }

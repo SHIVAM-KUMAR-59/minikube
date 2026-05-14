@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/spf13/cobra"
@@ -16,7 +16,7 @@ var ping = &cobra.Command{
 		// HTTP GET request to the minik cluster to check if it is running
 		resp, err := http.Get("http://localhost:8080/ping")
 		if err != nil {
-			fmt.Println("Error pinging the minik cluster:", err)
+			slog.Error("Failed to ping minik cluster", "error", err)
 			return
 		}
 		defer resp.Body.Close()
@@ -24,9 +24,9 @@ var ping = &cobra.Command{
 		if resp.StatusCode == http.StatusOK {
 			var result map[string]string
 			json.NewDecoder(resp.Body).Decode(&result)
-			fmt.Println(result["message"])
+			slog.Info(result["message"])
 		} else {
-			fmt.Println("Minik cluster is not running. Status code:", resp.StatusCode)
+			slog.Error("Minik cluster is not running", "status_code", resp.StatusCode)
 		}
 	},
 }
