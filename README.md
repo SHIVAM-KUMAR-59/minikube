@@ -35,7 +35,7 @@ The project includes:
 | State Store | BoltDB |
 | Communication | gRPC |
 | Runtime | Docker SDK |
-| Dashboard | Go + HTMX/React |
+| Dashboard | Go + React/NextJs |
 
 ---
 
