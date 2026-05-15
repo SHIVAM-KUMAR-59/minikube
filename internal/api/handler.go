@@ -59,7 +59,7 @@ func (h *Handler) CreatePod(res http.ResponseWriter, req *http.Request) {
 		ID: generatePodID(),
 		Name: createPodReq.Name,
 		Image: createPodReq.Image,
-		Status: "Pending",
+		Status: store.StatusPending,
 		NodeID: "",
 	}
 

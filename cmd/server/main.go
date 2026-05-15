@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/api"
+	"github.com/SHIVAM-KUMAR-59/minikube/internal/scheduler"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/store"
 	"github.com/go-chi/chi/v5"
 )
@@ -22,6 +23,10 @@ func main() {
 
 	// Create a new API handler with the store and set up the endpoints.
 	handler := api.NewHandler(store)
+
+	// Start the scheduler in a separate goroutine to continuously schedule pending pods.
+	scheduler := scheduler.NewScheduler(store)
+	scheduler.Start()
 
 	r.Get("/ping", handler.Ping)
 	r.Post("/pods", handler.CreatePod)
