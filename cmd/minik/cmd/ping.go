@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -24,7 +25,7 @@ var ping = &cobra.Command{
 		if resp.StatusCode == http.StatusOK {
 			var result map[string]string
 			json.NewDecoder(resp.Body).Decode(&result)
-			slog.Info(result["message"])
+			fmt.Println(result["message"])
 		} else {
 			slog.Error("Minik cluster is not running", "status_code", resp.StatusCode)
 		}
