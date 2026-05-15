@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/api"
+	"github.com/SHIVAM-KUMAR-59/minikube/internal/loadbalancer"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/scheduler"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/store"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/worker"
@@ -22,8 +23,11 @@ func main() {
 	}
 	defer store.Close()
 
-	// Create a new API handler with the store and set up the endpoints.
-	handler := api.NewHandler(store)
+	// Initialize the load balancer with the store.
+	loadbalancer := loadbalancer.NewLoadBalancer(store)
+
+	// Create a new API handler with the store and load balancer and set up the endpoints.
+	handler := api.NewHandler(store, loadbalancer)
 
 	// Start the scheduler in a separate goroutine to continuously schedule pending pods.
 	scheduler := scheduler.NewScheduler(store)
@@ -42,6 +46,7 @@ func main() {
 	r.Get("/pods", handler.GetAllPods)
 	r.Post("/services", handler.CreateService)
 	r.Get("/services", handler.GetAllServices)
+	r.Get("/services/{name}/next", handler.GetNextPod)
 
 	slog.Info("Server running on port :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {

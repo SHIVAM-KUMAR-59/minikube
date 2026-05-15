@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/store"
+	"github.com/go-chi/chi/v5"
 )
 
 type CreateServiceRequest struct {
@@ -61,4 +62,26 @@ func (h *Handler) GetAllServices(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
 	json.NewEncoder(res).Encode(services)
 	slog.Info("Retrieved all services successfully", "service_count", len(services))
+}
+
+// GetNextPod handles the /services/{name}/next endpoint for retrieving the next pod for a given service. It extracts the service name from the URL, validates it, uses the load balancer to get the next pod for the service, and responds with the pod information in JSON format.
+func (h *Handler) GetNextPod(res http.ResponseWriter, req *http.Request) {
+	serviceName := chi.URLParam(req, "name")
+
+	if serviceName == "" {
+		slog.Error("Service name is required")
+		http.Error(res, "Service name is required", http.StatusBadRequest)
+		return
+	}
+
+	pod, err := h.loadBalancer.GetNextPodForService(serviceName)
+	if err != nil {
+		slog.Error("Failed to get next pod for service", "error", err)
+		http.Error(res, "Failed to get next pod for service", http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("content-type", "application/json")
+	json.NewEncoder(res).Encode(pod)
+	slog.Info("Retrieved next pod for service successfully", "service_name", serviceName)
 }
