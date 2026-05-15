@@ -81,6 +81,66 @@ func (s *Store) GetAllPods() ([]Pod, error) {
 	return pods, nil
 }
 
+// GetPodByID retrieves a single Pod from the "pods" bucket in BoltDB using the provided podID. It deserializes the pod data from JSON and returns a pointer to the Pod struct. If the pod is not found, it returns nil without an error.
+func (s *Store) GetPodByID(podID string) (*Pod, error) {
+	var pod Pod
+
+	err := s.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("pods"))
+		podData := bucket.Get([]byte(podID))
+		if podData == nil {
+			return nil // Pod not found, return nil without error
+		}
+		return json.Unmarshal(podData, &pod)
+	})
+	if err != nil {
+		slog.Error("Failed to retrieve pod from BoltDB", "error", err)
+		return nil, err
+	}
+
+	if pod.ID == "" {
+		return nil, nil // Pod not found
+	}
+
+	return &pod, nil
+}
+
+// UpdatePod takes a Pod struct, serializes it to JSON, and updates the existing pod data in the "pods" bucket of BoltDB using the pod's ID as the key. If the pod does not exist, it will be created.
+func (s *Store) UpdatePod(pod Pod) error {
+	// Serialize the Pod struct to JSON.
+	podData, err := json.Marshal(pod)
+	if err != nil {
+		slog.Error("Failed to serialize pod", "error", err)
+		return err
+	}
+
+	// Update the existing pod data in the "pods" bucket with the new serialized data.
+	err = s.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("pods"))
+		return bucket.Put([]byte(pod.ID), podData)
+	})
+	if err != nil {
+		slog.Error("Failed to update pod in BoltDB", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+// DeletePod removes a pod from the "pods" bucket in BoltDB using the provided podID as the key. If the pod does not exist, it will simply return without an error.
+func (s *Store) DeletePod(podID string) error {
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("pods"))
+		return bucket.Delete([]byte(podID))
+	})
+	if err != nil {
+		slog.Error("Failed to delete pod from BoltDB", "error", err)
+		return err
+	}
+	
+	return nil
+}
+
 // Close closes the BoltDB database connection when the Store is no longer needed.
 func (s *Store) Close() error {
     return s.db.Close()
