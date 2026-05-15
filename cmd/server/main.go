@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/api"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/loadbalancer"
@@ -39,7 +40,7 @@ func main() {
 		slog.Error("Error creating worker", "error", err)
 		return
 	}
-	worker.Start()
+	// worker.Start()
 
 	r.Get("/ping", handler.Ping)
 	r.Post("/pods", handler.CreatePod)
@@ -47,9 +48,19 @@ func main() {
 	r.Post("/services", handler.CreateService)
 	r.Get("/services", handler.GetAllServices)
 	r.Get("/services/{name}/next", handler.GetNextPod)
+	r.Post("/nodes/register", handler.RegisterNode)
+	r.Post("/nodes/{id}/heartbeat", handler.UpdateHeartbeat)
 
-	slog.Info("Server running on port :8080")
-	if err := http.ListenAndServe(":8080", r); err != nil {
-		slog.Error("Failed to start server", "error", err)
-	}
+	go func () {
+		slog.Info("Server running on port :8080")
+		if err := http.ListenAndServe(":8080", r); err != nil {
+			slog.Error("Failed to start server", "error", err)
+		}
+	}()
+
+	time.Sleep(1 * time.Second) // wait for server to be ready
+	worker.Start()
+
+	// Block forever
+	select {}
 }

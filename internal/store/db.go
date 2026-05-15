@@ -11,7 +11,7 @@ type Store struct {
 	db *bolt.DB
 }
 
-// Opens a DB connection and creates a bucket called "pods" if it doesn't exist, then returns a Store instance.
+// Opens a DB connection and creates a bucket called "pods", "services" and "nodes" if they don't exist, then returns a Store instance.
 func NewStore(dbPath string) (*Store, error) {
 
 	// Open the BoltDB database file. If it doesn't exist, it will be created.
@@ -21,13 +21,26 @@ func NewStore(dbPath string) (*Store, error) {
 		return nil, err
 	}
 
-	// Create a bucket called "pods" and "services" if they doesn't exist.
+	// Create a bucket called "pods", "services" and "nodes" if they doesn't exist.
 	err = db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte("pods"))
 		if err != nil {
+			slog.Error("Failed to create bucket for pods", "error", err)
 			return err
 		}
+
 		_, err = tx.CreateBucketIfNotExists([]byte("services"))
+		if err != nil {
+			slog.Error("Failed to create bucket for services", "error", err)
+			return err
+		}
+
+		_, err = tx.CreateBucketIfNotExists([]byte("nodes"))
+		if err != nil {
+			slog.Error("Failed to create bucket for nodes", "error", err)
+			return err
+		}
+		
 		return err
 	})
 	if err != nil {

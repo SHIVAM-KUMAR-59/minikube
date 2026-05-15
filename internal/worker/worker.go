@@ -2,8 +2,11 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/store"
@@ -37,10 +40,30 @@ func NewWorker(store *store.Store, nodeID string) (*Worker, error) {
 // Start launches a goroutine that periodically calls the Reconcile method to check for scheduled pods and attempt to run them.
 func (w *Worker) Start() {
 	slog.Info("Worker started", "nodeID", w.nodeID)
-	ticker := time.NewTicker(5 * time.Second)
+	
+	reconcileTicker := time.NewTicker(5 * time.Second)
+	heartbeatTicker := time.NewTicker(5 * time.Second)
+
+	// Register the worker node
+	time.Sleep(2 * time.Second) // Sleep for a short duration to ensure the API server is up and running before attempting to register the worker node.
+	resp, err := http.Post("http://localhost:8080/nodes/register", "application/json", strings.NewReader(fmt.Sprintf(`{"id": "%s", "name": "%s"}`, w.nodeID, w.nodeID)))
+	if err != nil {
+		slog.Error("Failed to register worker node", "error", err)
+		return
+	}
+	resp.Body.Close()
+
 	go func () {
-		for range ticker.C {
+		for range reconcileTicker.C {
 			w.Reconcile()
+		}
+	}()
+
+	// Start a separate goroutine to send heartbeat signals to the API server at regular intervals.
+	go func () {
+		for range heartbeatTicker.C {
+			// Send heartbeat to the API server
+			http.Post(fmt.Sprintf("http://localhost:8080/nodes/%s/heartbeat", w.nodeID), "application/json", nil)
 		}
 	}()
 }
