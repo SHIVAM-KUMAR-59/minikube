@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 
 	bolt "go.etcd.io/bbolt"
@@ -23,6 +24,17 @@ func (s *Store) CreatePod(pod Pod) error {
 	if err != nil {
 		slog.Error("Failed to serialize pod", "error", err)
 		return err
+	}
+
+	// Check if a pod with the same name already exists
+	existingPod, err := s.GetPodByName(pod.Name)
+	if err != nil {
+		slog.Error("Failed to check for existing pod", "error", err)
+		return err
+	}
+	if existingPod != nil {
+		slog.Error("Pod with the same name already exists", "podName", pod.Name)
+		return fmt.Errorf("pod with the same name already exists")
 	}
 
 	// Save the serialized pod data to the "pods" bucket with pod.ID as the key.
@@ -120,4 +132,31 @@ func (s *Store) DeletePod(podID string) error {
 	}
 	
 	return nil
+}
+
+// GetPodByName retrieves a single Pod from the "pods" bucket in BoltDB using the provided podName. It iterates through all pods, deserializes them from JSON, and returns a pointer to the Pod struct that matches the given name. If no pod with the specified name is found, it returns nil without an error.
+func (s *Store) GetPodByName(podName string) (*Pod, error) {
+	var pod *Pod
+	
+	err := s.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("pods"))
+		return bucket.ForEach(func(k, v []byte) error {
+			var p Pod
+			if err := json.Unmarshal(v, &p); err != nil {
+				slog.Error("Failed to deserialize pod", "error", err)
+				return err
+			}
+			if p.Name == podName {
+				pod = &p
+				return nil // Stop iterating once we find the pod
+			}
+			return nil
+		})
+	})
+	if err != nil {
+		slog.Error("Failed to retrieve pods from BoltDB", "error", err)
+		return nil, err
+	}
+
+	return pod, nil
 }
