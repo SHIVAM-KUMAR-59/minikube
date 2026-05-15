@@ -6,10 +6,11 @@ import (
 
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/api"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/store"
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 
 	// Initialize the BoltDB store and create a new Handler for API endpoints.
 	store, err := store.NewStore("minikube.db")
@@ -22,10 +23,12 @@ func main() {
 	// Create a new API handler with the store and set up the endpoints.
 	handler := api.NewHandler(store)
 
-	mux.HandleFunc("/ping", handler.Ping)
+	r.Get("/ping", handler.Ping)
+	r.Post("/pods", handler.CreatePod)
+	r.Get("/pods", handler.GetAllPods)
 
 	slog.Info("Server running on port :8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	if err := http.ListenAndServe(":8080", r); err != nil {
 		slog.Error("Failed to start server", "error", err)
 	}
 }
