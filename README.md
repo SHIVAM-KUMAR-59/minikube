@@ -15,7 +15,8 @@ The project includes:
 ## Contents
 1. [Technological Overview](#technological-overview)
 2. [Tech Stack](#tech-stack)
-3. [Building Phases](#building-phases)
+3. [Folder Structure](#folder-structure)
+4. [Building Phases](#building-phases)
     - [Phase 1 - Go foundations + project skeleton](#phase-1---go-foundations--project-skeleton)
     - [Phase 2 - Control plane core](#phase-2---control-plane-core)
     - [Phase 3 - Worker node and Docker container lifecycle](#phase-3---worker-node-and-docker-container-lifecycle)
@@ -39,6 +40,52 @@ The project includes:
 | Communication | gRPC |
 | Runtime | Docker SDK |
 | Dashboard | Go + React/NextJs |
+
+---
+
+## Folder Structure
+
+```
+MINIKUBE/
+├── cmd/
+│   ├── minik/
+│   │   └── cmd/
+│   │       ├── ping.go           # CLI ping command handler
+│   │       └── root.go           # Root CLI command setup
+│   ├── main.go                   # Minik entrypoint, starts CLI
+│   └── server/
+│       └── main.go               # Server entrypoint, starts API
+├── dashboard/                    # Frontend UI assets
+├── docs/
+│   ├── BoltDB.md                 # BoltDB integration notes
+│   └── COBRA.md                  # Cobra CLI usage docs
+├── internal/
+│   ├── api/
+│   │   ├── handler.go            # Base HTTP handler setup
+│   │   ├── node_handler.go       # Node REST endpoint handlers
+│   │   ├── ping_handler.go       # Health check ping endpoint
+│   │   ├── pod_handler.go        # Pod CRUD API handlers
+│   │   └── service_handler.go    # Service resource API handlers
+│   ├── loadbalancer/
+│   │   └── loadbalancer.go       # Routes traffic across nodes
+│   ├── scheduler/
+│   │   └── scheduler.go          # Assigns pods to worker nodes
+│   ├── store/
+│   │   ├── db.go                 # BoltDB init and connection
+│   │   ├── node.go               # Node state persistence layer
+│   │   ├── pod.go                # Pod state persistence layer
+│   │   ├── service.go            # Service data store ops
+│   │   └── status.go             # Tracks resource status changes
+│   └── worker/
+│       └── worker.go             # Background task execution loop
+├── pkg/                          # Shared library code
+├── .gitignore
+├── go.mod                        # Go module dependencies
+├── go.sum                        # Dependency checksum lock
+├── minikube.db                   # BoltDB local database file
+├── overview.png                  # Architecture overview image
+└── README.md                     # Project documentation
+```
 
 ---
 
