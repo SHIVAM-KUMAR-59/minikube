@@ -22,7 +22,7 @@ The project includes:
 ---
 
 ## Technological Overview
-![alt text](image-1.png)
+![alt text](overview.png)
 
 ---
 
