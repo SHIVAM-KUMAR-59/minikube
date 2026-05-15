@@ -18,6 +18,8 @@ The project includes:
 3. [Building Phases](#building-phases)
     - [Phase 1 - Go foundations + project skeleton](#phase-1---go-foundations--project-skeleton)
     - [Phase 2 - Control plane core](#phase-2---control-plane-core)
+    - [Phase 3 - Worker node and Docker container lifecycle](#phase-3---worker-node-and-docker-container-lifecycle)
+    - [Phase 4 - Service Discovery and Load Balancing](#phase-4---service-discovery-and-load-balancing)
 
 ---
 
@@ -59,3 +61,9 @@ The project includes:
 - **What we built**: A worker node that runs as a background goroutine, reconciles scheduled pods, pulls Docker images, creates and starts real containers, and updates pod status to `RUNNING` in the store.
 - **Learnings**: Docker SDK (`ImagePull`, `ContainerCreate`, `ContainerStart`), `context.Background()` and why context is needed for long-running operations, aliasing imports to avoid naming conflicts, and chaining goroutine-based reconciliation loops.
 - **Deliverable**: `POST /pods` with an image like `nginx` results in a real Docker container running on the machine within 10 seconds. `docker ps` shows the container and `GET /pods` shows status `RUNNING`.
+
+### Phase 4 - Service Discovery and Load Balancing
+- **Goal**: Allow pods to be grouped under named services and have traffic distributed across them.
+- **What we built**: A `Service` data structure, service store methods on the existing `Store`, service API endpoints (`POST /services`, `GET /services`), a round-robin load balancer, and a `GET /services/{name}/next` endpoint that returns the next pod for a given service.
+- **Learnings**: Chi URL parameters, separating concerns across handler files, round-robin load balancing with a per-service counter map, and why a single BoltDB connection must be shared across all store operations.
+- **Deliverable**: Create a service pointing to running pods and hit `/services/{name}/next` repeatedly — each call returns the next pod in round-robin order.
