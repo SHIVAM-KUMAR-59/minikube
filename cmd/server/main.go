@@ -40,6 +40,8 @@ func main() {
 	r.Get("/ping", handler.Ping)
 	r.Post("/pods", handler.CreatePod)
 	r.Get("/pods", handler.GetAllPods)
+	r.Post("/services", handler.CreateService)
+	r.Get("/services", handler.GetAllServices)
 
 	slog.Info("Server running on port :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
