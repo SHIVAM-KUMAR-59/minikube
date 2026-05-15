@@ -17,6 +17,7 @@ The project includes:
 2. [Tech Stack](#tech-stack)
 3. [Building Phases](#building-phases)
     - [Phase 1 - Go foundations + project skeleton](#phase-1---go-foundations--project-skeleton)
+    - [Phase 2 - Control plane core](#phase-2---control-plane-core)
 
 ---
 
@@ -43,6 +44,12 @@ The project includes:
 
 ### Phase 1 - Go foundations + project skeleton
 - **Goal**: Get comfortable with Go patterns you'll use everywhere before touching orchestration logic.
-- **What we built**: a small CLI tool and a basic HTTP server, nothing MiniKube-specific yet, just Go muscle memory.
+- **What we built**: A small CLI tool and a basic HTTP server, nothing MiniKube-specific yet, just Go muscle memory.
 - **Learnings**: `cobra` (CLI framework), `net/http`, JSON marshalling, and Go project layout (`cmd/`, `internal/`, `pkg/`).
-- **Deliverable**: a `minik` CLI binary that can `ping` a running server and get back a response.
+- **Deliverable**: A `minik` CLI binary that can `ping` a running server and get back a response.
+
+### Phase 2 - Control plane core
+- **Goal**: Build the brain of MiniKube — the API, state store, and scheduler.
+- **What we built**: A structured REST API with chi router, a BoltDB embedded state store, pod status constants, and a background scheduler that assigns pending pods to nodes.
+- **Learnings**: `chi` router and method-based routing, BoltDB buckets and transactions (`db.Update`, `db.View`), goroutines and `time.NewTicker` for background loops, Go struct methods, UUID generation, and proper separation of concerns across `internal/api`, `internal/store`, and `internal/scheduler`.
+- **Deliverable**: `POST /pods` creates a pod persisted in BoltDB with status `PENDING`. Within 5 seconds the scheduler picks it up, assigns it to a node round-robin, and updates its status to `SCHEDULED`. `GET /pods` reflects the live state.
