@@ -9,43 +9,63 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import { Server, Trash2, RefreshCw, Clock } from 'lucide-react'
 
 export default function NodesPage() {
-  const [nodes, setNodes]         = useState<Node[]>([])
-  const [loading, setLoading]     = useState(true)
+  const [nodes, setNodes] = useState<Node[]>([])
+  const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [deleting, setDeleting]   = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const load = async (soft = false) => {
     if (soft) setRefreshing(true)
     else setLoading(true)
-    try { setNodes(await getNodes()) }
-    finally { setLoading(false); setRefreshing(false) }
+    try {
+      setNodes(await getNodes())
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
   }
 
   useEffect(() => {
-    const init = async () => { await load() }
+    const init = async () => {
+      await load()
+    }
     void init()
+  }, [])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      load()
+    }, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   const handleDelete = async () => {
     if (!confirmId) return
     setDeleting(true)
-    try { await deleteNode(confirmId); load(true) }
-    finally { setDeleting(false); setConfirmId(null) }
+    try {
+      await deleteNode(confirmId)
+      load(true)
+    } finally {
+      setDeleting(false)
+      setConfirmId(null)
+    }
   }
 
-  const confirmNode = nodes.find(n => n.id === confirmId)
-  const healthyCount = nodes.filter(n => n.status === 'READY').length
+  const confirmNode = nodes.find((n) => n.id === confirmId)
+  const healthyCount = nodes.filter((n) => n.status === 'READY').length
 
   return (
     <div className="px-6 md:px-10 py-8 max-w-6xl mx-auto">
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-text-primary text-3xl font-semibold tracking-tight mb-1">Nodes</h1>
+          <h1 className="text-text-primary text-3xl font-semibold tracking-tight mb-1">
+            Nodes
+          </h1>
           <p className="text-text-muted text-sm">
-            {healthyCount} of {nodes.length} node{nodes.length !== 1 ? 's' : ''} healthy
+            {healthyCount} of {nodes.length} node{nodes.length !== 1 ? 's' : ''}{' '}
+            healthy
           </p>
         </div>
         <button
@@ -53,14 +73,22 @@ export default function NodesPage() {
           disabled={refreshing}
           className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-card hover:bg-overlay border border-border-subtle text-text-secondary hover:text-text-primary text-sm font-medium transition-all duration-150 disabled:opacity-50 self-start sm:self-auto"
         >
-          <RefreshCw size={14} strokeWidth={1.5} className={refreshing ? 'animate-spin' : ''} />
+          <RefreshCw
+            size={14}
+            strokeWidth={1.5}
+            className={refreshing ? 'animate-spin' : ''}
+          />
           Refresh
         </button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-24">
-          <RefreshCw size={18} strokeWidth={1.5} className="animate-spin text-text-muted" />
+          <RefreshCw
+            size={18}
+            strokeWidth={1.5}
+            className="animate-spin text-text-muted"
+          />
         </div>
       ) : nodes.length === 0 ? (
         <EmptyState
@@ -71,22 +99,41 @@ export default function NodesPage() {
       ) : (
         <div className="bg-card border border-border-subtle rounded-xl overflow-hidden">
           <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b border-border-subtle">
-            <span className="col-span-3 text-text-muted text-xs font-medium uppercase tracking-wider">Name</span>
-            <span className="col-span-4 text-text-muted text-xs font-medium uppercase tracking-wider">ID</span>
-            <span className="col-span-2 text-text-muted text-xs font-medium uppercase tracking-wider">Status</span>
-            <span className="col-span-2 text-text-muted text-xs font-medium uppercase tracking-wider">Heartbeat</span>
+            <span className="col-span-3 text-text-muted text-xs font-medium uppercase tracking-wider">
+              Name
+            </span>
+            <span className="col-span-4 text-text-muted text-xs font-medium uppercase tracking-wider">
+              ID
+            </span>
+            <span className="col-span-2 text-text-muted text-xs font-medium uppercase tracking-wider">
+              Status
+            </span>
+            <span className="col-span-2 text-text-muted text-xs font-medium uppercase tracking-wider">
+              Heartbeat
+            </span>
             <span className="col-span-1" />
           </div>
           <ul className="divide-y divide-border-subtle">
-            {nodes.map(node => (
-              <li key={node.id} className="grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-overlay/40 transition-colors group">
+            {nodes.map((node) => (
+              <li
+                key={node.id}
+                className="grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-overlay/40 transition-colors group"
+              >
                 <div className="col-span-3 flex items-center gap-2.5 min-w-0">
                   <div className="w-6 h-6 rounded-md bg-surface border border-border-subtle flex items-center justify-center shrink-0">
-                    <Server size={11} strokeWidth={1.5} className="text-text-muted" />
+                    <Server
+                      size={11}
+                      strokeWidth={1.5}
+                      className="text-text-muted"
+                    />
                   </div>
-                  <p className="text-text-primary text-sm font-medium truncate">{node.name}</p>
+                  <p className="text-text-primary text-sm font-medium truncate">
+                    {node.name}
+                  </p>
                 </div>
-                <p className="col-span-4 text-text-muted text-xs font-mono truncate">{node.id}</p>
+                <p className="col-span-4 text-text-muted text-xs font-mono truncate">
+                  {node.id}
+                </p>
                 <div className="col-span-2">
                   <StatusBadge status={node.status as 'READY' | 'NOT_READY'} />
                 </div>

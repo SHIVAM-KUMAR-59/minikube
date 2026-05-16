@@ -11,9 +11,17 @@ type Props = {
   children: React.ReactNode
 }
 
-export default function Modal({ title, description, open, onClose, children }: Props) {
+export default function Modal({
+  title,
+  description,
+  open,
+  onClose,
+  children,
+}: Props) {
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
     if (open) document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [open, onClose])
@@ -22,7 +30,6 @@ export default function Modal({ title, description, open, onClose, children }: P
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-base/80 backdrop-blur-sm"
@@ -31,7 +38,6 @@ export default function Modal({ title, description, open, onClose, children }: P
 
       {/* Panel */}
       <div className="relative z-10 w-full max-w-md bg-surface border border-border-subtle rounded-xl shadow-2xl">
-
         {/* Header */}
         <div className="flex items-start justify-between px-6 py-5 border-b border-border-subtle">
           <div>
@@ -50,10 +56,7 @@ export default function Modal({ title, description, open, onClose, children }: P
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5">
-          {children}
-        </div>
-
+        <div className="px-6 py-5">{children}</div>
       </div>
     </div>
   )

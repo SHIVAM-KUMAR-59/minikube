@@ -5,7 +5,6 @@ import { LayoutDashboard, RotateCcw } from 'lucide-react'
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-base flex flex-col items-center justify-center px-6 relative overflow-hidden">
-
       {/* Ambient grid background */}
       <div
         className="absolute inset-0 opacity-[0.03]"
@@ -21,7 +20,10 @@ export default function NotFound() {
       {/* Glow orb */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 rounded-full opacity-[0.06] pointer-events-none"
-        style={{ background: 'radial-gradient(circle, var(--violet) 0%, transparent 70%)' }}
+        style={{
+          background:
+            'radial-gradient(circle, var(--violet) 0%, transparent 70%)',
+        }}
       />
 
       {/* Corner decorations */}
@@ -32,14 +34,15 @@ export default function NotFound() {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-lg">
-
         {/* Status badge */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border-subtle mb-10">
           <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-failed opacity-60" />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-failed" />
           </span>
-          <span className="text-text-muted text-xs font-mono tracking-wide">pod/not-found — STATUS: 404</span>
+          <span className="text-text-muted text-xs font-mono tracking-wide">
+            pod/not-found — STATUS: 404
+          </span>
         </div>
 
         {/* 404 */}
@@ -60,7 +63,8 @@ export default function NotFound() {
               color: 'transparent',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
-              backgroundImage: 'linear-gradient(180deg, var(--violet-lt) 0%, var(--violet) 60%, transparent 100%)',
+              backgroundImage:
+                'linear-gradient(180deg, var(--violet-lt) 0%, var(--violet) 60%, transparent 100%)',
               letterSpacing: '-0.05em',
             }}
           >
@@ -75,8 +79,8 @@ export default function NotFound() {
 
         {/* Description */}
         <p className="text-text-secondary text-sm leading-relaxed mb-2">
-          The scheduler could&apos;nt locate this resource in the cluster.
-          It may have been terminated, evicted, or never existed.
+          The scheduler could&apos;nt locate this resource in the cluster. It
+          may have been terminated, evicted, or never existed.
         </p>
 
         {/* Mono detail */}
@@ -99,7 +103,9 @@ export default function NotFound() {
             <span className="text-failed-text">Error</span>
             <span className="text-text-muted"> from server (NotFound):</span>
             <br />
-            <span className="text-text-muted pl-4">pods &quot;unknown-resource&quot; not found</span>
+            <span className="text-text-muted pl-4">
+              pods &quot;unknown-resource&quot; not found
+            </span>
           </p>
         </div>
 
@@ -120,7 +126,6 @@ export default function NotFound() {
             Go back
           </button>
         </div>
-
       </div>
     </div>
   )

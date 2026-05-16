@@ -15,7 +15,9 @@ export default function StatCard({ label, value, icon: Icon, sub }: Props) {
       </div>
       <div className="min-w-0">
         <p className="text-text-muted text-xs font-medium mb-1">{label}</p>
-        <p className="text-text-primary text-2xl font-semibold leading-none">{value}</p>
+        <p className="text-text-primary text-2xl font-semibold leading-none">
+          {value}
+        </p>
         {sub && <p className="text-text-muted text-xs mt-1.5">{sub}</p>}
       </div>
     </div>
