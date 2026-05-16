@@ -13,7 +13,7 @@ import (
 
 // Handler provides methods to handle API requests related to nodes and other resources.
 type RegisterNodeRequest struct {
-	ID string `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -30,10 +30,10 @@ func (h *Handler) RegisterNode(res http.ResponseWriter, req *http.Request) {
 
 	// Create a Node struct using the decoded request data and set the LastHeartbeat to the current time and Status to READY.
 	node := store.Node{
-		ID: registerNodeRequest.ID,
-		Name: registerNodeRequest.Name,
+		ID:            registerNodeRequest.ID,
+		Name:          registerNodeRequest.Name,
 		LastHeartbeat: time.Now(),
-		Status: store.NodeStatusReady,
+		Status:        store.NodeStatusReady,
 	}
 
 	// Use the Store's RegisterNode method to save the node information to BoltDB. If there's an error, log it and return a 500 Internal Server Error response.
@@ -71,4 +71,23 @@ func (h *Handler) UpdateHeartbeat(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 	fmt.Fprintln(res, `{"status": "ok", "message": "Node heartbeat updated successfully"}`)
 	slog.Info("Node heartbeat updated successfully", "node_id", nodeID)
+}
+
+func (h *Handler) GetAllNodes(res http.ResponseWriter, req *http.Request) {
+	nodes, err := h.store.GetAllNodes()
+	if err != nil {
+		slog.Error("Failed to get nodes from store", "error", err)
+		http.Error(res, "Failed to get nodes", http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(res).Encode(nodes); err != nil {
+		slog.Error("Failed to encode nodes response", "error", err)
+		http.Error(res, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("content-type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	slog.Info("Nodes retrieved successfully", "count", len(nodes))
 }

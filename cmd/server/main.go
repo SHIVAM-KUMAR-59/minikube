@@ -32,7 +32,6 @@ func main() {
 	scheduler := scheduler.NewScheduler(store)
 	scheduler.Start()
 
-
 	r.Get("/ping", handler.Ping)
 	r.Post("/pods", handler.CreatePod)
 	r.Get("/pods", handler.GetAllPods)
@@ -42,6 +41,7 @@ func main() {
 	r.Get("/services/{name}/next", handler.GetNextPod)
 	r.Post("/nodes/register", handler.RegisterNode)
 	r.Post("/nodes/{id}/heartbeat", handler.UpdateHeartbeat)
+	r.Get("/nodes", handler.GetAllNodes)
 
 	slog.Info("Server running on port :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
