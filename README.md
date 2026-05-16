@@ -1,3 +1,4 @@
+![Dashboard Image](./dashboard.png)
 # MiniKube
 > A lightweight container orchestrator built in Go, inspired by Kubernetes.
  
