@@ -8,6 +8,7 @@
 *.so
 *.dylib
 minikube
+minik
 minik-server
 minik-worker
 
