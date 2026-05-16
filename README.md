@@ -1,22 +1,22 @@
 # MiniKube
-MiniKube is a simplified container orchestration system inspired by [**Kubernetes**](https://kubernetes.io/docs/home/). It is designed as a learning-focused distributed systems project that demonstrates how modern container orchestration works internally.
-
-The project includes:
-- A custom control plane
-- Pod scheduling
-- Controller reconciliation loops
-- Node heartbeats
-- Container execution using Docker
-- Service discovery and networking
-- CLI tooling similar to kubectl
+> A lightweight container orchestrator built in Go, inspired by Kubernetes.
+ 
+MiniKube is a distributed systems project that implements core Kubernetes concepts from scratch — pod scheduling, controller reconciliation loops, node heartbeats, container execution via Docker, service discovery, and a full CLI and web dashboard. Built as a deep dive into how modern container orchestration actually works internally.
 
 ---
 
 ## Contents
-1. [Technological Overview](#technological-overview)
-2. [Tech Stack](#tech-stack)
-3. [Folder Structure](#folder-structure)
-4. [Building Phases](#building-phases)
+1. [Features](#features)
+2. [Architecture](#architecture)
+3. [Tech Stack](#tech-stack)
+4. [Requirements](#requirements)
+5. [Installation](#installation)
+6. [Quick Start](#quick-start)
+7. [CLI Reference](#cli-reference)
+8. [How It Works](#how-it-works)
+9. [API Reference](#api-reference)
+10. [Project Structure](#project-structure)
+11. [Building Phases](#building-phases)
     - [Phase 1 - Go foundations + project skeleton](#phase-1---go-foundations--project-skeleton)
     - [Phase 2 - Control plane core](#phase-2---control-plane-core)
     - [Phase 3 - Worker node and Docker container lifecycle](#phase-3---worker-node-and-docker-container-lifecycle)
@@ -26,70 +26,253 @@ The project includes:
     - [Phase 7 - Dashboard UI and command](#phase-7---dashboard-ui-and-command)
 
 ---
-
-## Technological Overview
-![alt text](overview.png)
-
+ 
+## Features
+ 
+- **Pod scheduling** — round-robin scheduler assigns pods to healthy worker nodes automatically
+- **Reconciliation loop** — controller continuously diffs desired vs actual state and self-heals
+- **Real containers** — Docker SDK under the hood, actual containers are started and stopped
+- **Multi-node support** — run multiple worker nodes as separate processes, each handling their own pods
+- **Node heartbeats** — workers ping the control plane every 5 seconds; missing heartbeats mark nodes as `NOT_READY`
+- **Service discovery** — named services route traffic across pods with round-robin load balancing
+- **Full CLI** — `minik` CLI with `get`, `delete`, `apply`, `cluster`, and `dashboard` commands
+- **Web dashboard** — live Next.js dashboard showing cluster state, auto-refreshing every 5 seconds
+- **Single command setup** — `minik cluster start` spins up the entire cluster in the background
 ---
-
+ 
+## Architecture
+ 
+```
+┌─────────────────────────────────────────────┐
+│                Control Plane                │
+│                                             │
+│   ┌──────────┐  ┌───────────┐  ┌────────┐   │
+│   │API Server│  │ Scheduler │  │  Store │   │
+│   │ (chi)    │  │(round-rbn)│  │(BoltDB)│   │
+│   └──────────┘  └───────────┘  └────────┘   │
+└─────────────────────────────────────────────┘
+          │               │
+    HTTP  │               │ HTTP
+          ▼               ▼
+┌──────────────┐   ┌──────────────┐
+│   Worker 1   │   │   Worker 2   │
+│              │   │              │
+│ Docker SDK   │   │ Docker SDK   │
+│ [container]  │   │ [container]  │
+└──────────────┘   └──────────────┘
+ 
+┌─────────────────────────────────────────────┐
+│              minik CLI + Dashboard          │
+│   minik get pods / apply / cluster start    │
+│   localhost:3000 (Next.js dashboard)        │
+└─────────────────────────────────────────────┘
+```
+ 
+The control plane runs as a single server process. Workers are separate processes that register with the control plane, receive pod assignments, and execute containers via the Docker SDK. The CLI and dashboard both communicate with the control plane over HTTP.
+ 
+---
+ 
 ## Tech Stack
-
+ 
 | Layer | Technology |
 |---|---|
-| Language | Go |
-| API Server | net/http / chi |
+| Language | Go 1.24 |
+| API Server | `net/http` + `chi` router |
 | CLI | Cobra |
-| State Store | BoltDB |
-| Communication | gRPC |
-| Runtime | Docker SDK |
-| Dashboard | Go + React/NextJs |
-
+| State Store | BoltDB (embedded key-value) |
+| Container Runtime | Docker SDK for Go |
+| Dashboard Frontend | Next.js + Tailwind CSS |
+| UUID Generation | `github.com/google/uuid` |
+| YAML Parsing | `gopkg.in/yaml.v3` |
+ 
 ---
-
-## Folder Structure
-
+ 
+## Requirements
+ 
+- **Docker** — containers are run via the local Docker daemon
+- **Node.js + npm** — required for the web dashboard (`minik dashboard`)
+---
+ 
+## Installation
+ 
+```bash
+curl -fsSL https://github.com/SHIVAM-KUMAR-59/minikube/raw/main/install.sh -o /tmp/install.sh
+chmod +x /tmp/install.sh
+/tmp/install.sh
 ```
-MINIKUBE/
+ 
+This downloads the `minik`, `minik-server`, and `minik-worker` binaries for your platform and places them in `/usr/local/bin`.
+ 
+Supported platforms:
+- macOS arm64 (Apple Silicon)
+- macOS amd64 (Intel)
+- Linux amd64
+---
+ 
+## Quick Start
+ 
+```bash
+# 1. Start the cluster with 2 worker nodes
+minik cluster start --workers 2
+ 
+# 2. Create a pod from a YAML spec
+minik apply -f pod.yaml
+ 
+# 3. Check pod status
+minik get pods
+ 
+# 4. Open the web dashboard
+minik dashboard
+ 
+# 5. Stop everything
+minik cluster stop
+```
+ 
+**Example `pod.yaml`:**
+ 
+```yaml
+name: my-nginx
+image: nginx
+```
+ 
+---
+ 
+## CLI Reference
+ 
+### Cluster
+ 
+| Command | Description |
+|---|---|
+| `minik cluster start --workers N` | Start the server and N worker nodes as background processes |
+| `minik cluster stop` | Stop all cluster processes |
+ 
+### Resources
+ 
+| Command | Description |
+|---|---|
+| `minik get pods` | List all pods with status and node assignment |
+| `minik get nodes` | List all registered nodes with heartbeat time |
+| `minik get services` | List all services |
+| `minik apply -f <file>` | Create a pod from a YAML spec |
+| `minik delete pod <id>` | Delete a pod by ID |
+| `minik delete node <id>` | Delete a node by ID |
+| `minik delete service <id>` | Delete a service by ID |
+ 
+### Dashboard
+ 
+| Command | Description |
+|---|---|
+| `minik dashboard` | Start the web dashboard and open it in the browser |
+| `minik ping` | Check if the server is running |
+ 
+---
+ 
+## How It Works
+ 
+**Pod lifecycle:**
+ 
+1. User runs `minik apply -f pod.yaml` — CLI sends `POST /pods` to the control plane
+2. Pod is saved to BoltDB with status `PENDING`
+3. Scheduler goroutine ticks every 5 seconds, finds pending pods, picks a ready node via round-robin, and marks the pod `SCHEDULED`
+4. Worker goroutine on the assigned node ticks every 5 seconds, finds scheduled pods for its node, pulls the Docker image, creates and starts the container, and marks the pod `RUNNING`
+**Node health:**
+ 
+Workers send a heartbeat to `POST /nodes/{id}/heartbeat` every 5 seconds. The scheduler only assigns pods to nodes with status `READY`. If a node stops sending heartbeats, it can be detected and marked `NOT_READY`.
+ 
+**Service discovery:**
+ 
+A service is a named endpoint that maps to a list of pod IDs. `GET /services/{name}/next` returns the next pod in round-robin order, enabling basic load balancing.
+ 
+---
+ 
+## API Reference
+ 
+### Pods
+ 
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/pods` | Create a pod |
+| `GET` | `/pods` | List all pods |
+| `DELETE` | `/pods/{id}` | Delete a pod |
+| `PUT` | `/pods/{id}/status` | Update pod status |
+ 
+### Nodes
+ 
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/nodes/register` | Register a worker node |
+| `POST` | `/nodes/{id}/heartbeat` | Send a heartbeat |
+| `GET` | `/nodes` | List all nodes |
+| `DELETE` | `/nodes/{id}` | Delete a node |
+ 
+### Services
+ 
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/services` | Create a service |
+| `GET` | `/services` | List all services |
+| `GET` | `/services/{name}/next` | Get next pod (load balanced) |
+| `DELETE` | `/services/{id}` | Delete a service |
+ 
+---
+ 
+## Project Structure
+ 
+```
+minikube/
 ├── cmd/
-│   ├── minik/
+│   ├── minik/                    ← CLI binary entry point
+│   │   ├── main.go
 │   │   └── cmd/
-│   │       ├── ping.go           # CLI ping command handler
-│   │       └── root.go           # Root CLI command setup
-│   ├── main.go                   # Minik entrypoint, starts CLI
-│   └── server/
-│       └── main.go               # Server entrypoint, starts API
-├── dashboard/                    # Frontend UI assets
-├── docs/
-│   ├── BoltDB.md                 # BoltDB integration notes
-│   └── COBRA.md                  # Cobra CLI usage docs
+│   │       ├── root.go
+│   │       ├── ping.go
+│   │       ├── apply.go
+│   │       ├── dashboard.go
+│   │       ├── get.go
+│   │       ├── delete.go
+│   │       ├── cluster.go
+│   │       ├── get/              ← get subcommands
+│   │       │   ├── pods.go
+│   │       │   ├── nodes.go
+│   │       │   └── services.go
+│   │       ├── delete/           ← delete subcommands
+│   │       │   ├── pods.go
+│   │       │   ├── nodes.go
+│   │       │   └── services.go
+│   │       └── cluster/          ← cluster subcommands
+│   │           ├── start.go
+│   │           └── stop.go
+│   ├── server/                   ← API server binary
+│   │   └── main.go
+│   └── worker/                   ← Worker node binary
+│       └── main.go
 ├── internal/
-│   ├── api/
-│   │   ├── handler.go            # Base HTTP handler setup
-│   │   ├── node_handler.go       # Node REST endpoint handlers
-│   │   ├── ping_handler.go       # Health check ping endpoint
-│   │   ├── pod_handler.go        # Pod CRUD API handlers
-│   │   └── service_handler.go    # Service resource API handlers
-│   ├── loadbalancer/
-│   │   └── loadbalancer.go       # Routes traffic across nodes
-│   ├── scheduler/
-│   │   └── scheduler.go          # Assigns pods to worker nodes
-│   ├── store/
-│   │   ├── db.go                 # BoltDB init and connection
-│   │   ├── node.go               # Node state persistence layer
-│   │   ├── pod.go                # Pod state persistence layer
-│   │   ├── service.go            # Service data store ops
-│   │   └── status.go             # Tracks resource status changes
-│   └── worker/
-│       └── worker.go             # Background task execution loop
-├── pkg/                          # Shared library code
-├── .gitignore
-├── go.mod                        # Go module dependencies
-├── go.sum                        # Dependency checksum lock
-├── minikube.db                   # BoltDB local database file
-├── overview.png                  # Architecture overview image
-└── README.md                     # Project documentation
+│   ├── api/                      ← HTTP handlers
+│   │   ├── handler.go
+│   │   ├── pod_handler.go
+│   │   ├── node_handler.go
+│   │   ├── service_handler.go
+│   │   └── ping_handler.go
+│   ├── store/                    ← BoltDB persistence
+│   │   ├── db.go
+│   │   ├── pod.go
+│   │   ├── node.go
+│   │   ├── service.go
+│   │   └── status.go
+│   ├── scheduler/                ← Pod scheduling loop
+│   │   └── scheduler.go
+│   ├── worker/                   ← Container execution
+│   │   └── worker.go
+│   └── loadbalancer/             ← Round-robin load balancer
+│       └── loadbalancer.go
+├── dashboard/                    ← Next.js + Tailwind UI
+├── docs/                         ← Learning notes
+├── Makefile
+├── install.sh
+├── go.mod
+└── README.md
 ```
-
+ 
 ---
 
 ## Building Phases
