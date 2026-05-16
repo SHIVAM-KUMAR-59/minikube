@@ -23,6 +23,7 @@ The project includes:
     - [Phase 4 - Service Discovery and Load Balancing](#phase-4---service-discovery-and-load-balancing)
     - [Phase 5 - Multi-node support and HTTP-based worker communication](#phase-5---multi-node-support-and-http-based-worker-communication)
     - [Phase 6 - CLI commands](#phase-6---cli-commands)
+    - [Phase 7 - Dashboard UI and command](#phase-7---dashboard-ui-and-command)
 
 ---
 
@@ -128,3 +129,9 @@ MINIKUBE/
 - **What we built**: `minik get pods/nodes/services` for listing resources, `minik delete pod/node/service <id>` for deletion, `minik apply -f pod.yaml` for creating pods from YAML specs, and `minik cluster start/stop` for managing the entire cluster as background processes.
 - **Learnings**: YAML parsing with `gopkg.in/yaml.v3`, running detached background processes with `os/exec` and `syscall.SysProcAttr{Setsid: true}`, saving and reading PID files to track running processes, and structuring nested CLI commands with Cobra using parent/child command packages.
 - **Deliverable**: A user can now run `minik cluster start --workers 2` to spin up the entire cluster, use `minik apply -f pod.yaml` to create pods, monitor with `minik get pods`, and shut everything down with `minik cluster stop` — no curl commands or manual terminal management needed.
+
+### Phase 7 - Dashboard UI and command
+- **Goal**: Give users a visual interface to interact with the cluster without needing terminal commands or curl.
+- **What we built**: A full Next.js + Tailwind dashboard with four pages — Overview (cluster stats, recent pods, nodes, services), Pods (table with create and delete), Nodes (table with heartbeat timestamps), and Services (cards with create and delete). Added a `minik dashboard` CLI command that starts the frontend server and opens the browser automatically, with cross-platform support for Mac, Windows, and Linux.
+- **Learnings**: Converting Next.js server components to client components for polling, `useEffect` intervals for live data refresh every 5 seconds, relative timestamps with `date-fns`, cross-platform browser opening with `runtime.GOOS`, and keeping a child process alive from a CLI command.
+- **Deliverable**: Run `minik dashboard` and the browser opens automatically at `localhost:3000` showing live cluster state that auto-refreshes every 5 seconds. Users can create and delete pods and services directly from the UI.
