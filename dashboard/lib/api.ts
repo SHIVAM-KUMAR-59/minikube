@@ -55,3 +55,18 @@ export const createPod = async (name: string, image: string): Promise<Pod> => {
 
     return response.json()
 }
+
+export const createService = async (name: string, port: string): Promise<Service> => {
+    const response = await fetch(`${BASE_API_URL}/services`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name,
+            port
+        })
+    })
+
+    return response.json()
+}
