@@ -1,26 +1,113 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --base:    #0D1117;
+  --surface: #161B22;
+  --card:    #1C2128;
+  --overlay: #21262D;
+
+  /* Borders */
+  --border-subtle:  rgba(125, 139, 161, 0.15);
+  --border-default: rgba(125, 139, 161, 0.25);
+  --border-strong:  rgba(125, 139, 161, 0.40);
+
+  /* Text */
+  --text-primary:   #CDD9E5;
+  --text-secondary: #8B949E;
+  --text-muted:     #545D68;
+
+  /* Violet — primary */
+  --violet:     #7C3AED;
+  --violet-lt:  #A78BFA;
+  --violet-pale:#2E1065;
+  --violet-glow: rgba(124, 58, 237, 0.15);
+
+  /* Status */
+  --running:        #3FB950;
+  --running-bg:     #0D2A14;
+  --running-border: rgba(63, 185, 80, 0.25);
+  --running-text:   #56D364;
+
+  --pending:        #D29922;
+  --pending-bg:     #2A1F00;
+  --pending-border: rgba(210, 153, 34, 0.25);
+  --pending-text:   #E3B341;
+
+  --failed:        #F85149;
+  --failed-bg:     #2A0F0F;
+  --failed-border: rgba(248, 81, 73, 0.25);
+  --failed-text:   #FF7B72;
+
+  --unknown:        #545D68;
+  --unknown-bg:     #1C2128;
+  --unknown-border: rgba(84, 93, 104, 0.25);
+  --unknown-text:   #8B949E;
+
+  /* Semantic */
+  --success: #3FB950;
+  --warning: #D29922;
+  --danger:  #F85149;
+  --info:    #58A6FF;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  --color-base:    var(--base);
+  --color-surface: var(--surface);
+  --color-card:    var(--card);
+  --color-overlay: var(--overlay);
+
+  --color-border-subtle:  var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong:  var(--border-strong);
+
+  --color-text-primary:   var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted:     var(--text-muted);
+
+  --color-violet:      var(--violet);
+  --color-violet-lt:   var(--violet-lt);
+  --color-violet-pale: var(--violet-pale);
+  --color-violet-glow: var(--violet-glow);
+
+  --color-running:        var(--running);
+  --color-running-bg:     var(--running-bg);
+  --color-running-border: var(--running-border);
+  --color-running-text:   var(--running-text);
+
+  --color-pending:        var(--pending);
+  --color-pending-bg:     var(--pending-bg);
+  --color-pending-border: var(--pending-border);
+  --color-pending-text:   var(--pending-text);
+
+  --color-failed:        var(--failed);
+  --color-failed-bg:     var(--failed-bg);
+  --color-failed-border: var(--failed-border);
+  --color-failed-text:   var(--failed-text);
+
+  --color-unknown:        var(--unknown);
+  --color-unknown-bg:     var(--unknown-bg);
+  --color-unknown-border: var(--unknown-border);
+  --color-unknown-text:   var(--unknown-text);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger:  var(--danger);
+  --color-info:    var(--info);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 400;
+  background: var(--base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  padding: 0;
+  margin: 0;
 }
