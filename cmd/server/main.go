@@ -9,6 +9,7 @@ import (
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/scheduler"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 )
 
 func main() {
@@ -31,6 +32,12 @@ func main() {
 	// Start the scheduler in a separate goroutine to continuously schedule pending pods.
 	scheduler := scheduler.NewScheduler(store)
 	scheduler.Start()
+
+	// CORS middleware
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	}))
 
 	// Routes for API endpoints
 	r.Get("/ping", handler.Ping)

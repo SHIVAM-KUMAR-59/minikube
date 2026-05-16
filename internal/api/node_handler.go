@@ -90,6 +90,7 @@ func (h *Handler) GetAllNodes(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(nodes)
 	slog.Info("Nodes retrieved successfully", "count", len(nodes))
 }
 
