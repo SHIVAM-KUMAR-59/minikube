@@ -2,6 +2,7 @@ import { getPods, getNodes, getServices } from '@/lib/api'
 import StatCard from '@/components/StatCard'
 import StatusBadge from '@/components/StatusBadge'
 import { Box, Server, Network, Activity, Clock } from 'lucide-react'
+import { timeAgo } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,7 +87,9 @@ export default async function OverviewPage() {
                         <div className="flex items-center gap-1 text-text-muted text-xs">
                           <Clock size={10} strokeWidth={1.5} />
                           <span className="font-mono">
-                            {new Date(node.last_heartbeat).toLocaleTimeString()}
+                            {/* {new Date(node.last_heartbeat).toLocaleTimeString()}
+                             */}
+                             {timeAgo(node.last_heartbeat)}
                           </span>
                         </div>
                       </div>
