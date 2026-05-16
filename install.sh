@@ -108,7 +108,7 @@ done
 
 wait $NPM_PID
 NPM_EXIT=$?
-printf "\r"
+printf "\r\033[K"
 
 if [ $NPM_EXIT -ne 0 ]; then
     fail "npm install failed — make sure Node.js is installed"
