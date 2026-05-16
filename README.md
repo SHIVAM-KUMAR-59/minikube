@@ -21,7 +21,8 @@ The project includes:
     - [Phase 2 - Control plane core](#phase-2---control-plane-core)
     - [Phase 3 - Worker node and Docker container lifecycle](#phase-3---worker-node-and-docker-container-lifecycle)
     - [Phase 4 - Service Discovery and Load Balancing](#phase-4---service-discovery-and-load-balancing)
-    - [Multi-node support and HTTP-based worker communication](#phase-5---multi-node-support-and-http-based-worker-communication)
+    - [Phase 5 - Multi-node support and HTTP-based worker communication](#phase-5---multi-node-support-and-http-based-worker-communication)
+    - [Phase 6 - CLI commands](#phase-6---cli-commands)
 
 ---
 
@@ -121,3 +122,9 @@ MINIKUBE/
 - **What we built**: A standalone `cmd/worker/main.go` binary that accepts `--node-id` and `--server-url` flags, refactored the worker to communicate with the control plane purely over HTTP (no direct DB access), and added a `PUT /pods/{id}/status` endpoint so workers can update pod state remotely.
 - **Learnings**: Why a worker shouldn't have direct database access in a distributed system, using `http.NewRequest` for PUT requests, the `flag` package for CLI flags, and how proper process separation makes a system feel real.
 - **Deliverable**: Run `cmd/server/main.go` and two instances of `cmd/worker/main.go` with different node IDs — pods get distributed across both workers via round-robin scheduling and run as real Docker containers on their assigned node.
+
+### Phase 6 - CLI commands
+- **Goal**: Make MiniKube usable from the terminal without curl commands, and allow anyone to start the entire cluster with a single command.
+- **What we built**: `minik get pods/nodes/services` for listing resources, `minik delete pod/node/service <id>` for deletion, `minik apply -f pod.yaml` for creating pods from YAML specs, and `minik cluster start/stop` for managing the entire cluster as background processes.
+- **Learnings**: YAML parsing with `gopkg.in/yaml.v3`, running detached background processes with `os/exec` and `syscall.SysProcAttr{Setsid: true}`, saving and reading PID files to track running processes, and structuring nested CLI commands with Cobra using parent/child command packages.
+- **Deliverable**: A user can now run `minik cluster start --workers 2` to spin up the entire cluster, use `minik apply -f pod.yaml` to create pods, monitor with `minik get pods`, and shut everything down with `minik cluster stop` — no curl commands or manual terminal management needed.
