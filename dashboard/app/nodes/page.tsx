@@ -7,6 +7,7 @@ import StatusBadge from '@/components/StatusBadge'
 import EmptyState from '@/components/EmptyState'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { Server, Trash2, RefreshCw, Clock } from 'lucide-react'
+import { timeAgo } from '@/lib/utils'
 
 export default function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
@@ -139,7 +140,7 @@ export default function NodesPage() {
                 </div>
                 <div className="col-span-2 flex items-center gap-1 text-text-muted text-xs font-mono">
                   <Clock size={11} strokeWidth={1.5} className="shrink-0" />
-                  {new Date(node.last_heartbeat).toLocaleTimeString()}
+                  {timeAgo(node.last_heartbeat)}
                 </div>
                 <div className="col-span-1 flex justify-end">
                   <button
