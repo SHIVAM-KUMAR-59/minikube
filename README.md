@@ -21,6 +21,7 @@ The project includes:
     - [Phase 2 - Control plane core](#phase-2---control-plane-core)
     - [Phase 3 - Worker node and Docker container lifecycle](#phase-3---worker-node-and-docker-container-lifecycle)
     - [Phase 4 - Service Discovery and Load Balancing](#phase-4---service-discovery-and-load-balancing)
+    - [Multi-node support and HTTP-based worker communication](#phase-5---multi-node-support-and-http-based-worker-communication)
 
 ---
 
@@ -114,3 +115,9 @@ MINIKUBE/
 - **What we built**: A `Service` data structure, service store methods on the existing `Store`, service API endpoints (`POST /services`, `GET /services`), a round-robin load balancer, and a `GET /services/{name}/next` endpoint that returns the next pod for a given service.
 - **Learnings**: Chi URL parameters, separating concerns across handler files, round-robin load balancing with a per-service counter map, and why a single BoltDB connection must be shared across all store operations.
 - **Deliverable**: Create a service pointing to running pods and hit `/services/{name}/next` repeatedly — each call returns the next pod in round-robin order.
+
+### Phase 5 - Multi-node support and HTTP-based worker communication
+- **Goal**: Separate the worker into its own binary so multiple independent worker nodes can run on different processes, making the architecture properly distributed.
+- **What we built**: A standalone `cmd/worker/main.go` binary that accepts `--node-id` and `--server-url` flags, refactored the worker to communicate with the control plane purely over HTTP (no direct DB access), and added a `PUT /pods/{id}/status` endpoint so workers can update pod state remotely.
+- **Learnings**: Why a worker shouldn't have direct database access in a distributed system, using `http.NewRequest` for PUT requests, the `flag` package for CLI flags, and how proper process separation makes a system feel real.
+- **Deliverable**: Run `cmd/server/main.go` and two instances of `cmd/worker/main.go` with different node IDs — pods get distributed across both workers via round-robin scheduling and run as real Docker containers on their assigned node.
