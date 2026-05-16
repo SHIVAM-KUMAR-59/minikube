@@ -18,6 +18,9 @@ minik-server-linux-*
 minik-worker-darwin-*
 minik-worker-linux-*
 
+# Zip files
+dashboard.zip
+
 # Test binary, built with `go test -c`
 *.test
 
