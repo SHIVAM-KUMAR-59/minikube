@@ -8,6 +8,8 @@
 *.so
 *.dylib
 minikube
+minik-server
+minik-worker
 
 # Test binary, built with `go test -c`
 *.test
