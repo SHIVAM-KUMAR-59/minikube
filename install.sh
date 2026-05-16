@@ -3,7 +3,7 @@
 set -e
 
 REPO="SHIVAM-KUMAR-59/minikube"
-VERSION="v1.0.0"
+VERSION="v1.0.1"
 INSTALL_DIR="/usr/local/bin"
 BASE_URL="https://github.com/$REPO/releases/download/$VERSION"
 
@@ -21,8 +21,7 @@ success() { echo -e "  ${GREEN}✓${RESET} $1"; }
 fail()    { echo -e "  ${RED}✗${RESET} $1"; exit 1; }
 info()    { echo -e "  ${GRAY}  $1${RESET}"; }
 
-# ─── Detect platform ────────────────────────────────────────
-
+# Detect platform
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 
@@ -42,8 +41,7 @@ else
     fail "Unsupported OS: $OS"
 fi
 
-# ─── Header ─────────────────────────────────────────────────
-
+# Header
 echo ""
 echo -e "  ${BOLD}${CYAN}MiniKube${RESET} ${GRAY}$VERSION${RESET}"
 echo -e "  ${GRAY}$PLATFORM/$ARCH${RESET}"
@@ -51,8 +49,7 @@ echo ""
 echo -e "  ${GRAY}────────────────────────────────────────${RESET}"
 echo ""
 
-# ─── Step 1: Binaries ───────────────────────────────────────
-
+# Step 1: Binaries
 echo -e "  ${BOLD}[1/3] Binaries${RESET}"
 
 download() {
@@ -81,8 +78,7 @@ download minik-worker
 
 echo ""
 
-# ─── Step 2: Dashboard ──────────────────────────────────────
-
+# Step 2: Dashboard
 echo -e "  ${BOLD}[2/3] Dashboard${RESET}"
 
 step "Downloading dashboard.zip"
@@ -122,8 +118,7 @@ success "Dependencies installed"
 
 echo ""
 
-# ─── Step 3: Verify ─────────────────────────────────────────
-
+# Step 3: Verify
 echo -e "  ${BOLD}[3/3] Verifying${RESET}"
 
 verify() {
