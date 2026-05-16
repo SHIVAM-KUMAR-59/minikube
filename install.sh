@@ -91,7 +91,7 @@ success "Downloaded"
 step "Extracting..."
 sudo unzip -q -o /tmp/dashboard.zip -d "$INSTALL_DIR"
 sudo rm -f /tmp/dashboard.zip
-sudo chown -R "$USER" "$INSTALL_DIR/dashboard"  # ← move this HERE, before npm install
+sudo chown -R "$USER" "$INSTALL_DIR/dashboard"
 success "Extracted to $INSTALL_DIR/dashboard"
 
 step "Installing dependencies (this may take a moment)..."
@@ -115,6 +115,8 @@ if [ $NPM_EXIT -ne 0 ]; then
 fi
 
 success "Dependencies installed"
+
+echo ""
 
 echo ""
 
