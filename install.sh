@@ -95,11 +95,29 @@ success "Downloaded"
 step "Extracting..."
 sudo unzip -q -o /tmp/dashboard.zip -d "$INSTALL_DIR"
 sudo rm -f /tmp/dashboard.zip
+sudo chown -R "$USER" "$INSTALL_DIR/dashboard"  # ← move this HERE, before npm install
 success "Extracted to $INSTALL_DIR/dashboard"
 
 step "Installing dependencies (this may take a moment)..."
-cd "$INSTALL_DIR/dashboard" && npm install --silent 2>/dev/null
-sudo chown -R "$USER" "$INSTALL_DIR/dashboard"
+cd "$INSTALL_DIR/dashboard" && npm install --silent --no-audit --no-fund &
+NPM_PID=$!
+
+SPINNER=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+i=0
+while kill -0 $NPM_PID 2>/dev/null; do
+    printf "\r  ${CYAN}%s${RESET} Installing dependencies..." "${SPINNER[$i]}"
+    i=$(( (i+1) % 10 ))
+    sleep 0.1
+done
+
+wait $NPM_PID
+NPM_EXIT=$?
+printf "\r"
+
+if [ $NPM_EXIT -ne 0 ]; then
+    fail "npm install failed — make sure Node.js is installed"
+fi
+
 success "Dependencies installed"
 
 echo ""
