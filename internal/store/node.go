@@ -40,7 +40,7 @@ func (s *Store) RegisterNode(node Node) error {
 
 // GetAllNodes retrieves all nodes from the "nodes" bucket in BoltDB, deserializes them from JSON, and returns a slice of Node structs.
 func (s *Store) GetAllNodes() ([]Node, error) {
-	var nodes []Node
+	var nodes []Node = []Node{}
 
 	err := s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("nodes"))

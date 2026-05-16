@@ -82,14 +82,7 @@ func (h *Handler) GetAllNodes(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := json.NewEncoder(res).Encode(nodes); err != nil {
-		slog.Error("Failed to encode nodes response", "error", err)
-		http.Error(res, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
-
 	res.Header().Set("content-type", "application/json")
-	res.WriteHeader(http.StatusOK)
 	json.NewEncoder(res).Encode(nodes)
 	slog.Info("Nodes retrieved successfully", "count", len(nodes))
 }

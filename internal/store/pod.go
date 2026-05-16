@@ -10,9 +10,9 @@ import (
 
 // Pod represents a Kubernetes Pod with relevant information for storage and retrieval.
 type Pod struct {
-	ID string `json:"id"`
-	Name string `json:"name"`
-	Image string `json:"image"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Image  string `json:"image"`
 	Status string `json:"status"`
 	NodeID string `json:"node_id"`
 }
@@ -52,8 +52,8 @@ func (s *Store) CreatePod(pod Pod) error {
 
 // GetAllPods retrieves all pods from the "pods" bucket in BoltDB, deserializes them from JSON, and returns a slice of Pod structs.
 func (s *Store) GetAllPods() ([]Pod, error) {
-	var pods []Pod
-	
+	var pods []Pod = []Pod{}
+
 	err := s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("pods"))
 		return bucket.ForEach(func(k, v []byte) error {
@@ -130,14 +130,14 @@ func (s *Store) DeletePod(podID string) error {
 		slog.Error("Failed to delete pod from BoltDB", "error", err)
 		return err
 	}
-	
+
 	return nil
 }
 
 // GetPodByName retrieves a single Pod from the "pods" bucket in BoltDB using the provided podName. It iterates through all pods, deserializes them from JSON, and returns a pointer to the Pod struct that matches the given name. If no pod with the specified name is found, it returns nil without an error.
 func (s *Store) GetPodByName(podName string) (*Pod, error) {
 	var pod *Pod
-	
+
 	err := s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("pods"))
 		return bucket.ForEach(func(k, v []byte) error {

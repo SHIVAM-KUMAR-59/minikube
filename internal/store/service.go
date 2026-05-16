@@ -39,7 +39,7 @@ func (s *Store) CreateService(service Service) error {
 
 // GetAllServices retrieves all services from the "services" bucket in BoltDB, deserializes them from JSON, and returns a slice of Service structs.
 func (s *Store) GetAllServices() ([]Service, error) {
-	var services []Service
+	var services []Service = []Service{}
 
 	err := s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("services"))
