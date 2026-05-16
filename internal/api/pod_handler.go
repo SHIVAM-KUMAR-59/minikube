@@ -11,7 +11,7 @@ import (
 )
 
 type CreatePodRequest struct {
-	Name string `json:"name"`
+	Name  string `json:"name"`
 	Image string `json:"image"`
 }
 
@@ -35,9 +35,9 @@ func (h *Handler) CreatePod(res http.ResponseWriter, req *http.Request) {
 
 	// Create a new Pod struct with the provided name and image
 	pod := store.Pod{
-		ID: generateRandomID(),
-		Name: createPodReq.Name,
-		Image: createPodReq.Image,
+		ID:     generateRandomID(),
+		Name:   createPodReq.Name,
+		Image:  createPodReq.Image,
 		Status: store.StatusPending,
 		NodeID: "",
 	}
@@ -106,9 +106,33 @@ func (h *Handler) UpdatePodStatus(res http.ResponseWriter, req *http.Request) {
 		slog.Error("Failed to update pod status", "pod_id", podID, "error", err)
 		return
 	}
-	
+
 	slog.Info("Pod status updated successfully", "pod_id", podID, "new_status", updateReq.Status)
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(http.StatusOK)
 	fmt.Fprintln(res, `{"status": "ok", "message": "Pod status updated successfully"}`)
+}
+
+// DeletePod handles the /pods/{id} endpoint for deleting a Pod. It extracts the pod ID from the URL, validates it, deletes the pod from the store, and responds with a success message if the deletion is successful.
+func (h *Handler) DeletePod(res http.ResponseWriter, req *http.Request) {
+	// Extract pod ID from the URL path
+	podID := chi.URLParam(req, "id")
+
+	if podID == "" {
+		slog.Error("Pod ID is required for deletion")
+		http.Error(res, "Pod ID is required", http.StatusBadRequest)
+		return
+	}
+
+	err := h.store.DeletePod(podID)
+	if err != nil {
+		slog.Error("Failed to delete pod", "pod_id", podID, "error", err)
+		http.Error(res, "Failed to delete pod", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info("Pod deleted successfully", "pod_id", podID)
+	res.Header().Set("content-type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	fmt.Fprintln(res, `{"status": "ok", "message": "Pod deleted successfully"}`)
 }

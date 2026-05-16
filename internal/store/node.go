@@ -10,14 +10,14 @@ import (
 
 // Node represents a Kubernetes Node with relevant information for storage and retrieval.
 type Node struct {
-	ID string	`json:"id"`
-	Name string	`json:"name"`
-	LastHeartbeat time.Time	`json:"last_heartbeat"`
-	Status string	`json:"status"`
+	ID            string    `json:"id"`
+	Name          string    `json:"name"`
+	LastHeartbeat time.Time `json:"last_heartbeat"`
+	Status        string    `json:"status"`
 }
 
 // RegisterNode takes a Node struct, serializes the Node to JSON, and saves it in the "nodes" bucket of BoltDB using the node's ID as the key.
-func (s *Store) RegisterNode (node Node) error {
+func (s *Store) RegisterNode(node Node) error {
 	// Serialize the Node struct to JSON.
 	nodeData, err := json.Marshal(node)
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *Store) UpdateNodeHeartbeat(nodeID string) error {
 }
 
 // GetNodeByID retrieves a node from the "nodes" bucket in BoltDB by its ID, deserializes it from JSON, and returns a pointer to the Node struct. If the node is not found, it returns nil without an error.
-func (s *Store) GetNodeByID (nodeID string) (*Node, error) {
+func (s *Store) GetNodeByID(nodeID string) (*Node, error) {
 	var node Node
 
 	err := s.db.View(func(tx *bolt.Tx) error {
@@ -99,4 +99,18 @@ func (s *Store) GetNodeByID (nodeID string) (*Node, error) {
 	}
 
 	return &node, nil
+}
+
+// DeleteNode deletes a node from the "nodes" bucket in BoltDB using the node ID as the key.
+func (s *Store) DeleteNode(nodeID string) error {
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("nodes"))
+		return bucket.Delete([]byte(nodeID))
+	})
+	if err != nil {
+		slog.Error("Failed to delete node from BoltDB", "error", err)
+		return err
+	}
+
+	return nil
 }

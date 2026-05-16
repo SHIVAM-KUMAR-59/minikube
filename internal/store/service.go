@@ -9,10 +9,10 @@ import (
 
 // Service represents a Kubernetes Service with relevant information for storage and retrieval.
 type Service struct {
-	ID string `json:"id"`
-	Name string `json:"name"`
+	ID   string   `json:"id"`
+	Name string   `json:"name"`
 	Pods []string `json:"pods"`
-	Port string `json:"port"`
+	Port string   `json:"port"`
 }
 
 // CreateService takes a Service struct, serializes the Service to JSON, and saves it in the "services" bucket of BoltDB using the service's ID as the key.
@@ -40,7 +40,7 @@ func (s *Store) CreateService(service Service) error {
 // GetAllServices retrieves all services from the "services" bucket in BoltDB, deserializes them from JSON, and returns a slice of Service structs.
 func (s *Store) GetAllServices() ([]Service, error) {
 	var services []Service
-	
+
 	err := s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("services"))
 		return bucket.ForEach(func(k, v []byte) error {
@@ -64,7 +64,7 @@ func (s *Store) GetAllServices() ([]Service, error) {
 // GetServiceByName retrieves a service by its name from the "services" bucket in BoltDB, deserializes it from JSON, and returns a pointer to the Service struct.
 func (s *Store) GetServiceByName(name string) (*Service, error) {
 	var service *Service
-	
+
 	err := s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("services"))
 		return bucket.ForEach(func(k, v []byte) error {
@@ -91,4 +91,17 @@ func (s *Store) GetServiceByName(name string) (*Service, error) {
 	}
 
 	return service, nil
+}
+
+// DeleteService deletes a service from the "services" bucket in BoltDB using the service ID as the key.
+func (s *Store) DeleteService(serviceID string) error {
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("services"))
+		return bucket.Delete([]byte(serviceID))
+	})
+	if err != nil {
+		slog.Error("Failed to delete service from BoltDB", "error", err)
+		return err
+	}
+	return nil
 }

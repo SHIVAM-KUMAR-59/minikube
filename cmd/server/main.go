@@ -32,16 +32,26 @@ func main() {
 	scheduler := scheduler.NewScheduler(store)
 	scheduler.Start()
 
+	// Routes for API endpoints
 	r.Get("/ping", handler.Ping)
+
+	// Pod endpoints
 	r.Post("/pods", handler.CreatePod)
 	r.Get("/pods", handler.GetAllPods)
+	r.Delete("/pods/{id}", handler.DeletePod)
 	r.Put("/pods/{id}/status", handler.UpdatePodStatus)
+
+	// Service endpoints
 	r.Post("/services", handler.CreateService)
 	r.Get("/services", handler.GetAllServices)
 	r.Get("/services/{name}/next", handler.GetNextPod)
+	r.Delete("/services/{id}", handler.DeleteService)
+
+	// Node endpoints
 	r.Post("/nodes/register", handler.RegisterNode)
 	r.Post("/nodes/{id}/heartbeat", handler.UpdateHeartbeat)
 	r.Get("/nodes", handler.GetAllNodes)
+	r.Delete("/nodes/{id}", handler.DeleteNode)
 
 	slog.Info("Server running on port :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {

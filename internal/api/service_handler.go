@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -10,10 +11,11 @@ import (
 )
 
 type CreateServiceRequest struct {
-	Name string `json:"name"`
+	Name string   `json:"name"`
 	Pods []string `json:"pods"`
-	Port string `json:"port"`
+	Port string   `json:"port"`
 }
+
 // CreateService handles the /services endpoint for creating a new Service. It decodes the request body to get the Service name, associated pods, and port, validates the input, creates a new Service struct, saves it to the store, and responds with a success message and the created Service.
 func (h *Handler) CreateService(res http.ResponseWriter, req *http.Request) {
 	var createServiceReq CreateServiceRequest
@@ -31,7 +33,7 @@ func (h *Handler) CreateService(res http.ResponseWriter, req *http.Request) {
 	}
 
 	service := store.Service{
-		ID: generateRandomID(),
+		ID:   generateRandomID(),
 		Name: createServiceReq.Name,
 		Pods: createServiceReq.Pods,
 		Port: createServiceReq.Port,
@@ -58,7 +60,7 @@ func (h *Handler) GetAllServices(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Failed to retrieve services", http.StatusInternalServerError)
 		return
 	}
-	
+
 	res.Header().Set("content-type", "application/json")
 	json.NewEncoder(res).Encode(services)
 	slog.Info("Retrieved all services successfully", "service_count", len(services))
@@ -84,4 +86,27 @@ func (h *Handler) GetNextPod(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
 	json.NewEncoder(res).Encode(pod)
 	slog.Info("Retrieved next pod for service successfully", "service_name", serviceName)
+}
+
+// DeleteService handles the /services/{id} endpoint for deleting a Service. It extracts the service ID from the URL, validates it, deletes the service from the store, and responds with a success message if the deletion is successful.
+func (h *Handler) DeleteService(res http.ResponseWriter, req *http.Request) {
+	serviceID := chi.URLParam(req, "id")
+
+	if serviceID == "" {
+		slog.Error("Service ID is required")
+		http.Error(res, "Service ID is required", http.StatusBadRequest)
+		return
+	}
+
+	err := h.store.DeleteService(serviceID)
+	if err != nil {
+		slog.Error("Failed to delete service", "error", err)
+		http.Error(res, "Failed to delete service", http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("content-type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	fmt.Fprintln(res, `{"status": "ok", "message": "Service deleted successfully"}`)
+	slog.Info("Service deleted successfully", "service_id", serviceID)
 }

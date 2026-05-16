@@ -73,6 +73,7 @@ func (h *Handler) UpdateHeartbeat(res http.ResponseWriter, req *http.Request) {
 	slog.Info("Node heartbeat updated successfully", "node_id", nodeID)
 }
 
+// GetAllNodes handles the /nodes endpoint for retrieving all registered nodes. It retrieves the nodes from the store, encodes them as JSON, and responds with the list of nodes. If there's an error during retrieval or encoding, it logs the error and responds with a 500 Internal Server Error.
 func (h *Handler) GetAllNodes(res http.ResponseWriter, req *http.Request) {
 	nodes, err := h.store.GetAllNodes()
 	if err != nil {
@@ -90,4 +91,26 @@ func (h *Handler) GetAllNodes(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(http.StatusOK)
 	slog.Info("Nodes retrieved successfully", "count", len(nodes))
+}
+
+// DeleteNode handles the /nodes/{id} endpoint for deleting a node. It extracts the node ID from the URL, validates it, deletes the node from the store, and responds with a success message if the deletion is successful. If there's an error during deletion, it logs the error and responds with a 500 Internal Server Error.
+func (h *Handler) DeleteNode(res http.ResponseWriter, req *http.Request) {
+	nodeID := chi.URLParam(req, "id")
+
+	if nodeID == "" {
+		slog.Error("Node ID is required")
+		http.Error(res, "Node ID is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.DeleteNode(nodeID); err != nil {
+		slog.Error("Failed to delete node", "error", err)
+		http.Error(res, "Failed to delete node", http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("content-type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	fmt.Fprintln(res, `{"status": "ok", "message": "Node deleted successfully"}`)
+	slog.Info("Node deleted successfully", "node_id", nodeID)
 }
