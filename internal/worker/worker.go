@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -18,12 +19,12 @@ import (
 // Worker represents a worker node in the cluster, responsible for managing and executing tasks.
 type Worker struct {
 	dockerClient *client.Client
-	store *store.Store
+	serverUrl string
 	nodeID string
 }
 
 // NewWorker creates a new Worker instance with the provided store and node ID.
-func NewWorker(store *store.Store, nodeID string) (*Worker, error) {
+func NewWorker(serverUrl string, nodeID string) (*Worker, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		slog.Error("Failed to create Docker client", "error", err)
@@ -32,7 +33,7 @@ func NewWorker(store *store.Store, nodeID string) (*Worker, error) {
 
 	return &Worker{
 		dockerClient: dockerClient,
-		store: store,
+		serverUrl: serverUrl,
 		nodeID: nodeID,
 	}, nil
 }
@@ -46,7 +47,7 @@ func (w *Worker) Start() {
 
 	// Register the worker node
 	time.Sleep(2 * time.Second) // Sleep for a short duration to ensure the API server is up and running before attempting to register the worker node.
-	resp, err := http.Post("http://localhost:8080/nodes/register", "application/json", strings.NewReader(fmt.Sprintf(`{"id": "%s", "name": "%s"}`, w.nodeID, w.nodeID)))
+	resp, err := http.Post(fmt.Sprintf("%s/nodes/register", w.serverUrl), "application/json", strings.NewReader(fmt.Sprintf(`{"id": "%s", "name": "%s"}`, w.nodeID, w.nodeID)))
 	if err != nil {
 		slog.Error("Failed to register worker node", "error", err)
 		return
@@ -63,7 +64,7 @@ func (w *Worker) Start() {
 	go func () {
 		for range heartbeatTicker.C {
 			// Send heartbeat to the API server
-			http.Post(fmt.Sprintf("http://localhost:8080/nodes/%s/heartbeat", w.nodeID), "application/json", nil)
+			http.Post(fmt.Sprintf("%s/nodes/%s/heartbeat", w.serverUrl, w.nodeID), "application/json", nil)
 		}
 	}()
 }
@@ -71,11 +72,22 @@ func (w *Worker) Start() {
 // Reconcile checks for any pods that are scheduled to run on this worker node and attempts to run them. It fetches all pods from the store, checks their status, and if a pod is in the Scheduled state and assigned to this worker's node ID, it calls the RunPod method to execute the pod. If there are any errors during this process, it logs the errors using slog.
 func (w *Worker) Reconcile() {
 	// Fetch all pods
-	pods, err := w.store.GetAllPods()
+	response, err := http.Get(fmt.Sprintf("%s/pods", w.serverUrl))
 	if err != nil {
 		slog.Error("Failed to fetch pods from store", "error", err)
 		return
 	}
+	defer response.Body.Close()
+
+	var pods []store.Pod
+	err = json.NewDecoder(response.Body).Decode(&pods)
+	if err != nil {
+		slog.Error("Failed to decode pods response", "error", err)
+		return
+	}
+
+	// Log the number of pods fetched
+	slog.Info("Fetched pods from store", "pod_count", len(pods))
 
 	// Iterate through the pods and check their status
 	for _, pod := range pods {
@@ -117,12 +129,20 @@ func (w *Worker) RunPod (pod store.Pod) {
 	}
 
 	// update pod status to StatusRunning in store
-	pod.Status = store.StatusRunning
-	err = w.store.UpdatePod(pod)
+	reqBody := strings.NewReader(fmt.Sprintf(`{"status": "%s"}`, store.StatusRunning))
+	httpReq, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/pods/%s/status", w.serverUrl, pod.ID), reqBody)
 	if err != nil {
-		slog.Error("Failed to update pod status in store", "error", err)
-		return
+    	slog.Error("Failed to create update request", "error", err)
+    	return
 	}
+	
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpResp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+    	slog.Error("Failed to update pod status", "error", err)
+    	return
+	}
+	defer httpResp.Body.Close()
 
 	slog.Info("Pod is now running", "podID", pod.ID)
 }

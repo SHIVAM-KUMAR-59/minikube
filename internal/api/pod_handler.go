@@ -2,10 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/store"
+	"github.com/go-chi/chi/v5"
 )
 
 type CreatePodRequest struct {
@@ -66,4 +68,47 @@ func (h *Handler) GetAllPods(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
 	json.NewEncoder(res).Encode(pods)
 	slog.Info("Retrieved all pods successfully", "pod_count", len(pods))
+}
+
+// UpdatePodStatus is a helper function that updates the status of a pod with the given pod ID. It retrieves the pod from the store, updates its status, and saves the updated pod back to the store. It also logs the status update operation.
+func (h *Handler) UpdatePodStatus(res http.ResponseWriter, req *http.Request) {
+	// Extract pod ID from the URL path
+	podID := chi.URLParam(req, "id")
+
+	if podID == "" {
+		slog.Error("Pod ID is required")
+		http.Error(res, "Pod ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Extract the new status from the request body
+	var updateReq struct {
+		Status string `json:"status"`
+	}
+
+	err := json.NewDecoder(req.Body).Decode(&updateReq)
+	if err != nil {
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(res, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	pod, err := h.store.GetPodByID(podID)
+	if err != nil {
+		slog.Error("Failed to get pod for status update", "pod_id", podID, "error", err)
+		return
+	}
+
+	pod.Status = updateReq.Status
+
+	err = h.store.UpdatePod(*pod)
+	if err != nil {
+		slog.Error("Failed to update pod status", "pod_id", podID, "error", err)
+		return
+	}
+	
+	slog.Info("Pod status updated successfully", "pod_id", podID, "new_status", updateReq.Status)
+	res.Header().Set("content-type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	fmt.Fprintln(res, `{"status": "ok", "message": "Pod status updated successfully"}`)
 }
