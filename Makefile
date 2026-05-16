@@ -31,3 +31,8 @@ install: build
 	sudo cp $(BINARY_NAME) /usr/local/bin/
 	sudo cp $(SERVER_BINARY) /usr/local/bin/
 	sudo cp $(WORKER_BINARY) /usr/local/bin/
+	sudo rm -rf /usr/local/bin/dashboard
+	sudo cp -r dashboard /usr/local/bin/dashboard
+	sudo rm -rf /usr/local/bin/dashboard/node_modules
+	cd /usr/local/bin/dashboard && sudo npm install
+	sudo chown -R $(USER) /usr/local/bin/dashboard

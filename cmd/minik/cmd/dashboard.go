@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -21,9 +22,22 @@ var dashboardCmd = &cobra.Command{
 		fmt.Printf("  \033[1m\033[36mStarting MiniK Dashboard...\033[0m\n")
 		fmt.Printf("  \033[90m%s\033[0m\n", strings.Repeat("─", 40))
 
+		// Get installed binary path
+		execPath, err := os.Executable()
+		if err != nil {
+			fmt.Printf(
+				"  \033[31m✗\033[0m Failed to locate executable path: %v\n",
+				err,
+			)
+			return
+		}
+
+		// Resolve dashboard directory relative to binary
+		dashboardDir := filepath.Join(filepath.Dir(execPath), "dashboard")
+
 		// Start frontend process
 		frontend := exec.Command("npm", "run", "dev")
-		frontend.Dir = "./dashboard"
+		frontend.Dir = dashboardDir
 
 		// Attach logs
 		frontend.Stdout = os.Stdout
@@ -31,7 +45,10 @@ var dashboardCmd = &cobra.Command{
 
 		// Start frontend
 		if err := frontend.Start(); err != nil {
-			fmt.Printf("  \033[31m✗\033[0m Failed to start dashboard: %v\n", err)
+			fmt.Printf(
+				"  \033[31m✗\033[0m Failed to start dashboard: %v\n",
+				err,
+			)
 			return
 		}
 
@@ -42,12 +59,17 @@ var dashboardCmd = &cobra.Command{
 
 		fmt.Printf("  \033[33m⟳\033[0m Waiting for dashboard to boot...\n")
 
-		// Wait for dev server
+		// Wait for frontend server
 		time.Sleep(3 * time.Second)
+		// If error then stop
+		if frontend.ProcessState != nil && frontend.ProcessState.Exited() {
+			fmt.Printf("  \033[31m✗\033[0m Dashboard failed to start\n")
+			return
+		}
 
 		url := "http://localhost:3000"
 
-		// Cross-platform browser opener
+		// Cross-platform browser opening
 		var browserCmd *exec.Cmd
 
 		switch runtime.GOOS {
@@ -67,7 +89,7 @@ var dashboardCmd = &cobra.Command{
 			)
 		}
 
-		// Open browser if supported
+		// Open browser
 		if browserCmd != nil {
 			if err := browserCmd.Start(); err != nil {
 				fmt.Printf(

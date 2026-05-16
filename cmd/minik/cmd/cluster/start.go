@@ -35,8 +35,22 @@ var startCluster = &cobra.Command{
 		fmt.Printf("  \033[1m\033[36mStarting minik cluster...\033[0m\n")
 		fmt.Printf("  \033[90m%s\033[0m\n", strings.Repeat("─", 40))
 
+		// Get current executable path
+		execPath, err := os.Executable()
+		if err != nil {
+			fmt.Printf("\033[31m✗\033[0m Failed to locate executable path: %v\n", err)
+			return
+		}
+
+		// Directory where minik binary exists
+		binDir := filepath.Dir(execPath)
+
+		// Resolve sibling binaries
+		serverBinary := filepath.Join(binDir, "minik-server")
+		workerBinary := filepath.Join(binDir, "minik-worker")
+
 		// Start the server
-		server := exec.Command("./minik-server")
+		server := exec.Command(serverBinary)
 		server.Stdout = nil
 		server.Stderr = nil
 		server.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
@@ -50,7 +64,7 @@ var startCluster = &cobra.Command{
 		// Start N workers
 		for i := 1; i <= numberOfWorkers; i++ {
 			nodeID := fmt.Sprintf("node%d", i)
-			worker := exec.Command("./minik-worker", "--node-id", nodeID)
+			worker := exec.Command(workerBinary, "--node-id", nodeID)
 			worker.Stdout = nil
 			worker.Stderr = nil
 			worker.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
