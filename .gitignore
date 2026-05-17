@@ -7,16 +7,16 @@
 *.dll
 *.so
 *.dylib
-minikube
-minik
-minik-server
-minik-worker
-minik-darwin-*
-minik-linux-*
-minik-server-darwin-*
-minik-server-linux-*
-minik-worker-darwin-*
-minik-worker-linux-*
+/minikube
+/minik
+/minik-server
+/minik-worker
+/minik-darwin-*
+/minik-linux-*
+/minik-server-darwin-*
+/minik-server-linux-*
+/minik-worker-darwin-*
+/minik-worker-linux-*
 
 # Zip files
 dashboard.zip
