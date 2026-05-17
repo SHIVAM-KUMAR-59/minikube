@@ -160,3 +160,38 @@ func (s *Store) GetPodByName(podName string) (*Pod, error) {
 
 	return pod, nil
 }
+
+// GetPodsByNodeID retrieves all pods whose nodeID is the same as the provided nodeID and Status is equal to Running or Scheduled from the "pods" bucket in BoltDB, deserializes them from JSON, and returns a slice of Pod structs.
+func (s *Store) GetPodsByNodeID(nodeID string) ([]Pod, error) {
+	var pods []Pod
+
+	err := s.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("pods"))
+
+		return bucket.ForEach(func(k, v []byte) error {
+			var pod Pod
+
+			if err := json.Unmarshal(v, &pod); err != nil {
+				slog.Error(
+					"Failed to deserialize pod",
+					"error", err,
+				)
+				return err
+			}
+
+			// Filter by node ID
+			if pod.NodeID == nodeID && (pod.Status == StatusRunning || pod.Status == StatusScheduled) {
+				pods = append(pods, pod)
+			}
+
+			return nil
+		})
+	})
+
+	if err != nil {
+		slog.Error("Failed to retrieve pods from BoltDB", "nodeID", nodeID, "error", err)
+		return nil, err
+	}
+
+	return pods, nil
+}

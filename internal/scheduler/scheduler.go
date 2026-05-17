@@ -8,13 +8,12 @@ import (
 )
 
 type Scheduler struct {
-	store *store.Store
+	store   *store.Store
 	counter int
 }
 
-// NewScheduler creates a new Scheduler instance with the provided Store and hardcoded node IDs. The Scheduler is responsible for assigning Pods to nodes based on the available node IDs.
+// NewScheduler creates a new Scheduler instance with the provided Store. The Scheduler is responsible for assigning Pods to nodes based on the available node IDs.
 func NewScheduler(store *store.Store) *Scheduler {
-	// Hardcoded node IDs for now
 	return &Scheduler{store: store}
 }
 
@@ -45,7 +44,7 @@ func (s *Scheduler) Schedule() {
 				slog.Error("Failed to get nodes from store", "error", err)
 				continue
 			}
-			
+
 			// Filter nodes with status = READY
 			readyNodes := []store.Node{}
 			for _, node := range nodes {
@@ -60,7 +59,7 @@ func (s *Scheduler) Schedule() {
 			}
 
 			// Use round-robin across ready nodes using modulo on len(readyNodes)
-			nodeID := readyNodes[s.counter % len(readyNodes)].ID
+			nodeID := readyNodes[s.counter%len(readyNodes)].ID
 			s.counter++
 
 			// Update the pod status to "Scheduled" and assign it to the selected node

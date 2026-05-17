@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/api"
+	"github.com/SHIVAM-KUMAR-59/minikube/internal/controller"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/loadbalancer"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/scheduler"
 	"github.com/SHIVAM-KUMAR-59/minikube/internal/store"
@@ -32,6 +33,10 @@ func main() {
 	// Start the scheduler in a separate goroutine to continuously schedule pending pods.
 	scheduler := scheduler.NewScheduler(store)
 	scheduler.Start()
+
+	// Start the Controller in a separate goroutine to continuously reassign dead node's pods.
+	controller := controller.NewController(store)
+	controller.Start()
 
 	// CORS middleware
 	r.Use(cors.Handler(cors.Options{

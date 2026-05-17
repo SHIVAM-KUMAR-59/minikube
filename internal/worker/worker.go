@@ -19,8 +19,8 @@ import (
 // Worker represents a worker node in the cluster, responsible for managing and executing tasks.
 type Worker struct {
 	dockerClient *client.Client
-	serverUrl string
-	nodeID string
+	serverUrl    string
+	nodeID       string
 }
 
 // NewWorker creates a new Worker instance with the provided store and node ID.
@@ -33,15 +33,15 @@ func NewWorker(serverUrl string, nodeID string) (*Worker, error) {
 
 	return &Worker{
 		dockerClient: dockerClient,
-		serverUrl: serverUrl,
-		nodeID: nodeID,
+		serverUrl:    serverUrl,
+		nodeID:       nodeID,
 	}, nil
 }
 
 // Start launches a goroutine that periodically calls the Reconcile method to check for scheduled pods and attempt to run them.
 func (w *Worker) Start() {
 	slog.Info("Worker started", "nodeID", w.nodeID)
-	
+
 	reconcileTicker := time.NewTicker(5 * time.Second)
 	heartbeatTicker := time.NewTicker(5 * time.Second)
 
@@ -54,14 +54,14 @@ func (w *Worker) Start() {
 	}
 	resp.Body.Close()
 
-	go func () {
+	go func() {
 		for range reconcileTicker.C {
 			w.Reconcile()
 		}
 	}()
 
 	// Start a separate goroutine to send heartbeat signals to the API server at regular intervals.
-	go func () {
+	go func() {
 		for range heartbeatTicker.C {
 			// Send heartbeat to the API server
 			http.Post(fmt.Sprintf("%s/nodes/%s/heartbeat", w.serverUrl, w.nodeID), "application/json", nil)
@@ -99,23 +99,23 @@ func (w *Worker) Reconcile() {
 }
 
 // RunPod takes a pod as input and attempts to run it using the Docker client. It first pulls the required image, then creates a container based on that image, and finally starts the container. If any of these steps fail, it logs the error using slog. After successfully starting the container, it updates the pod's status to Running in the store.
-func (w *Worker) RunPod (pod store.Pod) {
+func (w *Worker) RunPod(pod store.Pod) {
 	ctx := context.Background()
 
 	// Pull the image
 	reader, err := w.dockerClient.ImagePull(ctx, pod.Image, image.PullOptions{})
-    if err != nil {
-        slog.Error("Failed to pull image", "error", err)
-        return
-    }
-	
-    io.Copy(io.Discard, reader)
-    reader.Close()
+	if err != nil {
+		slog.Error("Failed to pull image", "error", err)
+		return
+	}
+
+	io.Copy(io.Discard, reader)
+	reader.Close()
 
 	// Create the container
 	container, err := w.dockerClient.ContainerCreate(ctx, &dockerContainer.Config{
 		Image: pod.Image,
-	}, nil, nil, nil, pod.Name)
+	}, nil, nil, nil, pod.Name+"-"+pod.ID[:8])
 	if err != nil {
 		slog.Error("Failed to create container", "error", err)
 		return
@@ -132,15 +132,15 @@ func (w *Worker) RunPod (pod store.Pod) {
 	reqBody := strings.NewReader(fmt.Sprintf(`{"status": "%s"}`, store.StatusRunning))
 	httpReq, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/pods/%s/status", w.serverUrl, pod.ID), reqBody)
 	if err != nil {
-    	slog.Error("Failed to create update request", "error", err)
-    	return
+		slog.Error("Failed to create update request", "error", err)
+		return
 	}
-	
+
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpResp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-    	slog.Error("Failed to update pod status", "error", err)
-    	return
+		slog.Error("Failed to update pod status", "error", err)
+		return
 	}
 	defer httpResp.Body.Close()
 

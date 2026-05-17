@@ -114,3 +114,21 @@ func (s *Store) DeleteNode(nodeID string) error {
 
 	return nil
 }
+
+// UpdateNodeStatus updates the Status field of a node with the given status. If the node is not found, it returns nil without an error.
+func (s *Store) UpdateNodeStatus(nodeID string, status string) error {
+	node, err := s.GetNodeByID(nodeID)
+	if err != nil {
+		slog.Error("Failed to retrieve node for heartbeat update", "error", err)
+		return err
+	}
+
+	if node == nil {
+		slog.Warn("Node not found for heartbeat update", "nodeID", nodeID)
+		return nil // Node not found, return nil without error
+	}
+
+	node.Status = status
+
+	return s.RegisterNode(*node)
+}
