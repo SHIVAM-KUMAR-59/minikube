@@ -69,7 +69,7 @@ func (w *Worker) Start() {
 	}()
 }
 
-// Reconcile checks for any pods that are scheduled to run on this worker node and attempts to run them. It fetches all pods from the store, checks their status, and if a pod is in the Scheduled state and assigned to this worker's node ID, it calls the RunPod method to execute the pod. If there are any errors during this process, it logs the errors using slog.
+// Reconcile checks all pods assigned to this worker node and ensures they are in the correct state. For pods in SCHEDULED state, it calls runPod to start the container. For pods in RUNNING state, it inspects the container via Docker — if the container is missing or stopped, it removes it and restarts it automatically. Any errors during this process are logged using slog.
 func (w *Worker) Reconcile() {
 	// Fetch all pods
 	response, err := http.Get(fmt.Sprintf("%s/pods", w.serverUrl))
@@ -80,6 +80,7 @@ func (w *Worker) Reconcile() {
 	defer response.Body.Close()
 
 	var pods []store.Pod
+
 	err = json.NewDecoder(response.Body).Decode(&pods)
 	if err != nil {
 		slog.Error("Failed to decode pods response", "error", err)
@@ -92,14 +93,47 @@ func (w *Worker) Reconcile() {
 	// Iterate through the pods and check their status
 	for _, pod := range pods {
 		if pod.Status == store.StatusScheduled && pod.NodeID == w.nodeID {
-			slog.Info("Pod is scheduled, attempting to run it", "podID", pod.ID)
-			w.RunPod(pod)
+			// Run the pod
+			slog.Info(
+				"Pod is scheduled, attempting to run it",
+				"podID", pod.ID,
+			)
+			w.runPod(pod)
+		}
+	}
+
+	// Finds all pods with status RUNNING and NodeID == w.nodeID
+	for _, pod := range pods {
+		if pod.Status == store.StatusRunning && pod.NodeID == w.nodeID {
+			containerName := pod.Name + "-" + pod.ID[:8]
+			ctx := context.Background()
+
+			// For each one, calls ContainerInspect using the container name
+			containerStatus, err := w.dockerClient.ContainerInspect(
+				ctx,
+				containerName,
+			)
+
+			// If the container state is exited or the container doesn't exist — call runPod(pod) again to restart it
+			if err != nil {
+				slog.Warn("Container missing, restarting pod", "podID", pod.ID, "container", containerName, "error", err)
+				w.removeContainer(containerName)
+				w.runPod(pod)
+				continue
+			}
+
+			// Container exists but is not running
+			if !containerStatus.State.Running {
+				slog.Warn("Container stopped, restarting pod", "podID", pod.ID, "container", containerName, "status", containerStatus.State.Status)
+				w.removeContainer(containerName)
+				w.runPod(pod)
+			}
 		}
 	}
 }
 
-// RunPod takes a pod as input and attempts to run it using the Docker client. It first pulls the required image, then creates a container based on that image, and finally starts the container. If any of these steps fail, it logs the error using slog. After successfully starting the container, it updates the pod's status to Running in the store.
-func (w *Worker) RunPod(pod store.Pod) {
+// runPod takes a pod as input and attempts to run it using the Docker client. It first pulls the required image, then creates a container based on that image, and finally starts the container. If any of these steps fail, it logs the error using slog. After successfully starting the container, it updates the pod's status to Running in the store.
+func (w *Worker) runPod(pod store.Pod) {
 	ctx := context.Background()
 
 	// Pull the image
@@ -145,4 +179,15 @@ func (w *Worker) RunPod(pod store.Pod) {
 	defer httpResp.Body.Close()
 
 	slog.Info("Pod is now running", "podID", pod.ID)
+}
+
+// removeContainer takes a container name and removes that container from docker to avoid conflicts
+func (w *Worker) removeContainer(containerName string) {
+	ctx := context.Background()
+	err := w.dockerClient.ContainerRemove(ctx, containerName, dockerContainer.RemoveOptions{
+		Force: true,
+	})
+	if err != nil {
+		slog.Warn("Failed to remove container", "container", containerName, "error", err)
+	}
 }

@@ -24,13 +24,13 @@ func (c *Controller) Start() {
 	ticker := time.NewTicker(10 * time.Second)
 	go func() {
 		for range ticker.C {
-			c.Reconcile()
+			c.reconcile()
 		}
 	}()
 }
 
 // Reconcile checks for any nodes that are dead / unhealthy to run pods and attempts to re-assign the pods. It fetches all nodes from the store, checks their status, and if a node's last heartbeat is more than 15 seconds ago, it is declared dead. Any pods assigned to this node which were in RUNNING or SCHEDULED states are then reset back to PENDING for another node to pick them up If there are any errors during this process, it logs the errors using slog.
-func (c *Controller) Reconcile() {
+func (c *Controller) reconcile() {
 
 	// Get all the nodes
 	nodes, err := c.db.GetAllNodes()

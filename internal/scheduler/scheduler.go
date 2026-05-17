@@ -23,13 +23,13 @@ func (s *Scheduler) Start() {
 	ticker := time.NewTicker(5 * time.Second)
 	go func() {
 		for range ticker.C {
-			s.Schedule()
+			s.schedule()
 		}
 	}()
 }
 
 // Schedule retrieves all Pods from the store and schedules any Pods that are in the Pending state. It assigns each pending Pod to a node in a round-robin fashion and updates the Pod's status to Scheduled. If there are any errors during the scheduling process, it logs the errors using slog.
-func (s *Scheduler) Schedule() {
+func (s *Scheduler) schedule() {
 	pods, err := s.store.GetAllPods()
 	if err != nil {
 		slog.Error("Failed to get pods from store", "error", err)
