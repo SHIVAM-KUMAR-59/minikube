@@ -85,6 +85,40 @@ func (h *Handler) GetAllPods(res http.ResponseWriter, req *http.Request) {
 	slog.Info("Retrieved all pods successfully", "pod_count", len(pods))
 }
 
+// GetPodByName handles the /pods/{podName} endpoint for retrieving one pod by its name. It retrieves the corresponding pod from the store, encodes it as JSON, and responds with the pod.
+func (h *Handler) GetPodByName(res http.ResponseWriter, req *http.Request) {
+	// Extract the pod name
+	podName := chi.URLParam(req, "podName")
+
+	if podName == "" {
+		slog.Error("Pod name is required for deletion")
+		http.Error(res, "Pod name is required", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch the pod by Name
+	pod, err := h.store.GetPodByName(podName)
+	if err != nil {
+		slog.Error("Failed to fetch pod", "pod_name", podName, "error", err)
+		http.Error(res, "Pod with this ID was not found", http.StatusNotFound)
+		return
+	}
+
+	// Check if pod exists
+	if pod == nil {
+		slog.Warn("Pod not found", "pod_name", podName)
+		http.Error(res, "Pod not found", http.StatusNotFound)
+		return
+	}
+
+	slog.Info("Pod fetched successfully", "pod_id", pod.ID)
+	res.Header().Set("content-type", "application/json")
+
+	if err := json.NewEncoder(res).Encode(pod); err != nil {
+		slog.Error("Failed to encode pod response", "error", err)
+	}
+}
+
 // UpdatePodStatus is a helper function that updates the status of a pod with the given pod ID. It retrieves the pod from the store, updates its status, and saves the updated pod back to the store. It also logs the status update operation.
 func (h *Handler) UpdatePodStatus(res http.ResponseWriter, req *http.Request) {
 	// Extract pod ID from the URL path
@@ -154,7 +188,7 @@ func (h *Handler) DeletePod(res http.ResponseWriter, req *http.Request) {
 
 // GetPodLogs handles the /pods/{name}/logs endpoint for fetching the logs for a pod. It extracts the pod name from the URL, then fetches the corresponding pod from the store, get the node handling that pod and makes a GET request to node.Address/logs/{containerName}, then streams the response back to the client.
 func (h *Handler) GetPodLogs(res http.ResponseWriter, req *http.Request) {
-	// Extract the pod ID
+	// Extract the pod name
 	podName := chi.URLParam(req, "podName")
 
 	if podName == "" {
@@ -163,7 +197,7 @@ func (h *Handler) GetPodLogs(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Fetch the pod by ID
+	// Fetch the pod by Name
 	pod, err := h.store.GetPodByName(podName)
 	if err != nil {
 		slog.Error("Failed to fetch pod", "pod_name", podName, "error", err)
