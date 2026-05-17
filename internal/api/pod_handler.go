@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -149,4 +150,49 @@ func (h *Handler) DeletePod(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(http.StatusOK)
 	fmt.Fprintln(res, `{"status": "ok", "message": "Pod deleted successfully"}`)
+}
+
+// GetPodLogs handles the /pods/{id}/logs endpoint for fetching the logs for a pod. It extracts the pod ID from the URL, then fetches the corresponding pod from the store, get the node handling that pod and makes a GET request to node.Address/logs/{containerName}, then streams the response back to the client.
+func (h *Handler) GetPodLogs(res http.ResponseWriter, req *http.Request) {
+	// Extract the pod ID
+	podID := chi.URLParam(req, "id")
+
+	if podID == "" {
+		slog.Error("Pod ID is required for deletion")
+		http.Error(res, "Pod ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch the pod by ID
+	pod, err := h.store.GetPodByID(podID)
+	if err != nil {
+		slog.Error("Failed to fetch pod", "pod_id", podID, "error", err)
+		http.Error(res, "Pod with this ID was not found", http.StatusNotFound)
+		return
+	}
+
+	// Fetch the node handling the pod
+	node, err := h.store.GetNodeByID(pod.NodeID)
+	if err != nil {
+		slog.Error("Failed to fetch node", "node_id", pod.NodeID, "error", err)
+		http.Error(res, "Failed to fetch logs", http.StatusInternalServerError)
+		return
+	}
+
+	// Build container name
+	containerName := pod.Name + "-" + pod.ID[:8]
+
+	// Make GET request to worker's log endpoint
+	logsResp, err := http.Get(fmt.Sprintf("%s/logs/%s", node.Address, containerName))
+	if err != nil {
+		slog.Error("Failed to fetch logs from worker", "node_id", node.ID, "error", err)
+		http.Error(res, "Failed to fetch logs", http.StatusInternalServerError)
+		return
+	}
+	defer logsResp.Body.Close()
+
+	// Stream the response back to the client
+	res.Header().Set("Content-Type", "text/plain")
+	io.Copy(res, logsResp.Body)
+	slog.Info("Logs streamed successfully", "pod_id", podID)
 }

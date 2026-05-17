@@ -14,6 +14,8 @@ import (
 	dockerContainer "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/go-chi/chi/v5"
 )
 
 // Worker represents a worker node in the cluster, responsible for managing and executing tasks.
@@ -21,10 +23,11 @@ type Worker struct {
 	dockerClient *client.Client
 	serverUrl    string
 	nodeID       string
+	port         string
 }
 
 // NewWorker creates a new Worker instance with the provided store and node ID.
-func NewWorker(serverUrl string, nodeID string) (*Worker, error) {
+func NewWorker(serverUrl string, nodeID string, port string) (*Worker, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		slog.Error("Failed to create Docker client", "error", err)
@@ -35,7 +38,43 @@ func NewWorker(serverUrl string, nodeID string) (*Worker, error) {
 		dockerClient: dockerClient,
 		serverUrl:    serverUrl,
 		nodeID:       nodeID,
+		port:         port,
 	}, nil
+}
+
+func (w *Worker) StartHttpServer() {
+	r := chi.NewRouter()
+
+	// Endpoint to stream logs
+	r.Get("/logs/{containerName}", func(res http.ResponseWriter, req *http.Request) {
+
+		// Extract the container name
+		containerName := chi.URLParam(req, "containerName")
+
+		// Call docker to get the logs
+		ctx := context.Background()
+		logs, err := w.dockerClient.ContainerLogs(ctx, containerName, dockerContainer.LogsOptions{
+			ShowStdout: true,
+			ShowStderr: true,
+		})
+		if err != nil {
+			slog.Error("Failed to get container logs", "container", containerName, "error", err)
+			http.Error(res, "Failed to get logs", http.StatusInternalServerError)
+			return
+		}
+		defer logs.Close()
+
+		// Stream the logs
+		res.Header().Set("Content-Type", "text/plain")
+		stdcopy.StdCopy(res, res, logs)
+	})
+
+	// Goroutine to run the server as an unblocking operation
+	go func() {
+		if err := http.ListenAndServe(":"+w.port, r); err != nil {
+			slog.Error("Failed to start worker HTTP server", "error", err)
+		}
+	}()
 }
 
 // Start launches a goroutine that periodically calls the Reconcile method to check for scheduled pods and attempt to run them.
@@ -47,7 +86,7 @@ func (w *Worker) Start() {
 
 	// Register the worker node
 	time.Sleep(2 * time.Second) // Sleep for a short duration to ensure the API server is up and running before attempting to register the worker node.
-	resp, err := http.Post(fmt.Sprintf("%s/nodes/register", w.serverUrl), "application/json", strings.NewReader(fmt.Sprintf(`{"id": "%s", "name": "%s"}`, w.nodeID, w.nodeID)))
+	resp, err := http.Post(fmt.Sprintf("%s/nodes/register", w.serverUrl), "application/json", strings.NewReader(fmt.Sprintf(`{"id": "%s", "name": "%s", "address": "http://localhost:%s"}`, w.nodeID, w.nodeID, w.port)))
 	if err != nil {
 		slog.Error("Failed to register worker node", "error", err)
 		return

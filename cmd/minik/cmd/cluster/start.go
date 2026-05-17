@@ -64,7 +64,7 @@ var startCluster = &cobra.Command{
 		// Start N workers
 		for i := 1; i <= numberOfWorkers; i++ {
 			nodeID := fmt.Sprintf("node%d", i)
-			worker := exec.Command(workerBinary, "--node-id", nodeID)
+			worker := exec.Command(workerBinary, "--node-id", nodeID, "--port", fmt.Sprintf("%d", 8081+i-1))
 			worker.Stdout = nil
 			worker.Stderr = nil
 			worker.SysProcAttr = &syscall.SysProcAttr{Setsid: true}

@@ -14,6 +14,7 @@ type Node struct {
 	Name          string    `json:"name"`
 	LastHeartbeat time.Time `json:"last_heartbeat"`
 	Status        string    `json:"status"`
+	Address       string    `json:"address"`
 }
 
 // RegisterNode takes a Node struct, serializes the Node to JSON, and saves it in the "nodes" bucket of BoltDB using the node's ID as the key.

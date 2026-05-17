@@ -52,6 +52,7 @@ func main() {
 	r.Get("/pods", handler.GetAllPods)
 	r.Delete("/pods/{id}", handler.DeletePod)
 	r.Put("/pods/{id}/status", handler.UpdatePodStatus)
+	r.Get("/pods/{id}/logs", handler.GetPodLogs)
 
 	// Service endpoints
 	r.Post("/services", handler.CreateService)

@@ -13,8 +13,9 @@ import (
 
 // Handler provides methods to handle API requests related to nodes and other resources.
 type RegisterNodeRequest struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
 }
 
 // RegisterNode handles the /register endpoint, allowing nodes to register themselves with the Minikube API. It decodes the incoming JSON request, creates a Node struct, and saves it to the BoltDB using the Store's RegisterNode method.
@@ -34,6 +35,7 @@ func (h *Handler) RegisterNode(res http.ResponseWriter, req *http.Request) {
 		Name:          registerNodeRequest.Name,
 		LastHeartbeat: time.Now(),
 		Status:        store.NodeStatusReady,
+		Address:       registerNodeRequest.Address,
 	}
 
 	// Use the Store's RegisterNode method to save the node information to BoltDB. If there's an error, log it and return a 500 Internal Server Error response.
