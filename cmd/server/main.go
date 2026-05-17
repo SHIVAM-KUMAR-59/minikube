@@ -67,6 +67,9 @@ func main() {
 	r.Get("/nodes", handler.GetAllNodes)
 	r.Delete("/nodes/{id}", handler.DeleteNode)
 
+	// Cluster endpoints
+	r.Get("/cluster/health", handler.GetClusterHealth)
+
 	slog.Info("Server running on port :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		slog.Error("Failed to start server", "error", err)
