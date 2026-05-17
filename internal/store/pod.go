@@ -10,11 +10,12 @@ import (
 
 // Pod represents a Kubernetes Pod with relevant information for storage and retrieval.
 type Pod struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Image  string `json:"image"`
-	Status string `json:"status"`
-	NodeID string `json:"node_id"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Image    string `json:"image"`
+	Status   string `json:"status"`
+	NodeID   string `json:"node_id"`
+	Replicas int    `json:"replicas"`
 }
 
 // CreatePod takes a Pod struct, serializes the Pod to JSON, and saves it in the "pods" bucket of BoltDB using the pod's ID as the key.

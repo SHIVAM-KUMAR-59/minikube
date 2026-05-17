@@ -11,8 +11,9 @@ import (
 )
 
 type CreatePodRequest struct {
-	Name  string `json:"name"`
-	Image string `json:"image"`
+	Name     string `json:"name"`
+	Image    string `json:"image"`
+	Replicas int    `json:"replicas"`
 }
 
 // CreatePod handles the /pods endpoint for creating a new Pod. It decodes the request body to get the Pod name and image, validates the input, creates a new Pod struct, saves it to the store, and responds with a success message and the created Pod.
@@ -33,27 +34,40 @@ func (h *Handler) CreatePod(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Create a new Pod struct with the provided name and image
-	pod := store.Pod{
-		ID:     generateRandomID(),
-		Name:   createPodReq.Name,
-		Image:  createPodReq.Image,
-		Status: store.StatusPending,
-		NodeID: "",
+	replicas := createPodReq.Replicas
+	if replicas == 0 {
+		replicas = 1
 	}
 
-	// Save the pod to the store
-	err = h.store.CreatePod(pod)
-	if err != nil {
-		slog.Error("Failed to create pod", "error", err)
-		http.Error(res, "Failed to create pod", http.StatusInternalServerError)
-		return
+	var createdPods []store.Pod
+	for i := 1; i <= replicas; i++ {
+		podName := fmt.Sprintf("%s-%d", createPodReq.Name, i)
+
+		// Create a new Pod struct with the provided name and image
+		pod := store.Pod{
+			ID:       generateRandomID(),
+			Name:     podName,
+			Image:    createPodReq.Image,
+			Status:   store.StatusPending,
+			NodeID:   "",
+			Replicas: replicas,
+		}
+
+		// Save the pod to the store
+		err = h.store.CreatePod(pod)
+		if err != nil {
+			slog.Error("Failed to create pod", "error", err)
+			http.Error(res, "Failed to create pod", http.StatusInternalServerError)
+			return
+		}
+
+		createdPods = append(createdPods, pod)
+		slog.Info("Pod created successfully", "pod_id", pod.ID, "pod_name", pod.Name)
 	}
 
 	res.Header().Set("content-type", "application/json")
 	res.WriteHeader(http.StatusCreated)
-	json.NewEncoder(res).Encode(pod)
-	slog.Info("Pod created successfully", "pod_id", pod.ID)
+	json.NewEncoder(res).Encode(createdPods)
 }
 
 // GetAllPods handles the /pods endpoint for retrieving all Pods. It retrieves all pods from the store, encodes them as JSON, and responds with the list of pods.

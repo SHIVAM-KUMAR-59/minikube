@@ -11,8 +11,9 @@ import (
 )
 
 type PodYamlInput struct {
-	Name  string `yaml:"name"`
-	Image string `yaml:"image"`
+	Name     string `yaml:"name"`
+	Image    string `yaml:"image"`
+	Replicas int    `yaml:"replicas"`
 }
 
 var filePath string
@@ -39,7 +40,7 @@ var apply = &cobra.Command{
 			return
 		}
 
-		resp, err := http.Post("http://localhost:8080/pods", "application/json", strings.NewReader(fmt.Sprintf(`{"name": "%s", "image": "%s"}`, podYamlInput.Name, podYamlInput.Image)))
+		resp, err := http.Post("http://localhost:8080/pods", "application/json", strings.NewReader(fmt.Sprintf(`{"name": "%s", "image": "%s", "replicas": %d}`, podYamlInput.Name, podYamlInput.Image, podYamlInput.Replicas)))
 		if err != nil {
 			fmt.Printf("\033[31m✗\033[0m Could not reach server at \033[36mlocalhost:8080\033[0m: %v\n", err)
 			return
