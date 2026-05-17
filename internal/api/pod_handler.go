@@ -152,21 +152,21 @@ func (h *Handler) DeletePod(res http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(res, `{"status": "ok", "message": "Pod deleted successfully"}`)
 }
 
-// GetPodLogs handles the /pods/{id}/logs endpoint for fetching the logs for a pod. It extracts the pod ID from the URL, then fetches the corresponding pod from the store, get the node handling that pod and makes a GET request to node.Address/logs/{containerName}, then streams the response back to the client.
+// GetPodLogs handles the /pods/{name}/logs endpoint for fetching the logs for a pod. It extracts the pod name from the URL, then fetches the corresponding pod from the store, get the node handling that pod and makes a GET request to node.Address/logs/{containerName}, then streams the response back to the client.
 func (h *Handler) GetPodLogs(res http.ResponseWriter, req *http.Request) {
 	// Extract the pod ID
-	podID := chi.URLParam(req, "id")
+	podName := chi.URLParam(req, "podName")
 
-	if podID == "" {
-		slog.Error("Pod ID is required for deletion")
-		http.Error(res, "Pod ID is required", http.StatusBadRequest)
+	if podName == "" {
+		slog.Error("Pod name is required for deletion")
+		http.Error(res, "Pod name is required", http.StatusBadRequest)
 		return
 	}
 
 	// Fetch the pod by ID
-	pod, err := h.store.GetPodByID(podID)
+	pod, err := h.store.GetPodByName(podName)
 	if err != nil {
-		slog.Error("Failed to fetch pod", "pod_id", podID, "error", err)
+		slog.Error("Failed to fetch pod", "pod_name", podName, "error", err)
 		http.Error(res, "Pod with this ID was not found", http.StatusNotFound)
 		return
 	}
@@ -194,5 +194,5 @@ func (h *Handler) GetPodLogs(res http.ResponseWriter, req *http.Request) {
 	// Stream the response back to the client
 	res.Header().Set("Content-Type", "text/plain")
 	io.Copy(res, logsResp.Body)
-	slog.Info("Logs streamed successfully", "pod_id", podID)
+	slog.Info("Logs streamed successfully", "pod_name", podName)
 }
