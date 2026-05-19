@@ -72,46 +72,46 @@ func handleClusterYaml(clusterYaml ClusterYaml) {
 	}
 
 	// Wait for workers to be ready
-	if clusterYaml.Cluster.Workers > 0 {
-		fmt.Printf("\033[36m→\033[0m Waiting for \033[36m%d\033[0m node(s) to be ready", clusterYaml.Cluster.Workers)
+	fmt.Printf("\033[36m→\033[0m Waiting for \033[36m%d\033[0m node(s) to be ready\n", clusterYaml.Cluster.Workers)
 
-		maxRetries := 30
-		for i := 0; i < maxRetries; i++ {
-			fmt.Print(".")
-			time.Sleep(2 * time.Second)
+	spinner := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	spinIdx := 0
+	maxRetries := 30
 
-			resp, err := http.Get("http://localhost:8080/nodes")
-			if err != nil {
-				continue
-			}
+	for i := range maxRetries {
+		fmt.Printf("\r  \033[36m%s\033[0m Waiting for nodes...", spinner[spinIdx])
+		spinIdx = (spinIdx + 1) % len(spinner)
+		time.Sleep(300 * time.Millisecond)
 
-			var nodes []struct {
-				Status string `json:"status"`
-			}
-			if err := json.NewDecoder(resp.Body).Decode(&nodes); err != nil {
-				resp.Body.Close()
-				continue
-			}
+		resp, err := http.Get("http://localhost:8080/nodes")
+		if err != nil {
+			continue
+		}
+
+		var nodes []struct {
+			Status string `json:"status"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&nodes); err != nil {
 			resp.Body.Close()
+			continue
+		}
+		resp.Body.Close()
 
-			readyCount := 0
-			for _, n := range nodes {
-				if n.Status == "READY" {
-					readyCount++
-				}
+		readyCount := 0
+		for _, n := range nodes {
+			if n.Status == "READY" {
+				readyCount++
 			}
+		}
 
-			if readyCount >= clusterYaml.Cluster.Workers {
-				fmt.Printf(" \033[32m✓\033[0m\n")
-				fmt.Printf("\033[32m✓\033[0m %d node(s) ready\n", readyCount)
-				break
-			}
+		if readyCount >= clusterYaml.Cluster.Workers {
+			fmt.Printf("\r  \033[32m✓\033[0m %d node(s) ready          \n", readyCount)
+			break
+		}
 
-			if i == maxRetries-1 {
-				fmt.Println()
-				fmt.Printf("\033[31m✗\033[0m Timed out waiting for nodes to be ready\n")
-				return
-			}
+		if i == maxRetries-1 {
+			fmt.Printf("\r  \033[31m✗\033[0m Timed out waiting for nodes\n")
+			return
 		}
 	}
 

@@ -2,7 +2,6 @@ package store
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 
 	bolt "go.etcd.io/bbolt"
@@ -34,8 +33,8 @@ func (s *Store) CreatePod(pod Pod) error {
 		return err
 	}
 	if existingPod != nil {
-		slog.Error("Pod with the same name already exists", "podName", pod.Name)
-		return fmt.Errorf("pod with the same name already exists")
+		slog.Info("Pod already exists, skipping", "podName", pod.Name)
+		return nil
 	}
 
 	// Save the serialized pod data to the "pods" bucket with pod.ID as the key.
