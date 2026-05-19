@@ -3,7 +3,7 @@
 set -e
 
 REPO="SHIVAM-KUMAR-59/minikube"
-VERSION="v1.1.0"
+VERSION="v1.2.0"
 INSTALL_DIR="/usr/local/bin"
 BASE_URL="https://github.com/$REPO/releases/download/$VERSION"
 
