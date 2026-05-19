@@ -1,0 +1,14 @@
+cluster:
+  workers: 2
+
+pods:
+  - name: nginx
+    image: nginx
+    replicas: 2
+  - name: redis
+    image: redis
+    replicas: 1
+
+services:
+  - name: nginx-service
+    port: 80
