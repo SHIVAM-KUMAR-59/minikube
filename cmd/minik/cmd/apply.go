@@ -78,10 +78,14 @@ func handleClusterYaml(clusterYaml ClusterYaml) {
 	spinIdx := 0
 	maxRetries := 30
 
-	for i := range maxRetries {
-		fmt.Printf("\r  \033[36m%s\033[0m Waiting for nodes...", spinner[spinIdx])
-		spinIdx = (spinIdx + 1) % len(spinner)
-		time.Sleep(300 * time.Millisecond)
+	for i := 0; i < maxRetries; i++ {
+
+		// Smooth spinner animation
+		for j := 0; j < 10; j++ {
+			fmt.Printf("\r  \033[36m%s\033[0m Waiting for nodes...", spinner[spinIdx])
+			spinIdx = (spinIdx + 1) % len(spinner)
+			time.Sleep(80 * time.Millisecond)
+		}
 
 		resp, err := http.Get("http://localhost:8080/nodes")
 		if err != nil {
@@ -91,10 +95,12 @@ func handleClusterYaml(clusterYaml ClusterYaml) {
 		var nodes []struct {
 			Status string `json:"status"`
 		}
+
 		if err := json.NewDecoder(resp.Body).Decode(&nodes); err != nil {
 			resp.Body.Close()
 			continue
 		}
+
 		resp.Body.Close()
 
 		readyCount := 0
